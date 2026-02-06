@@ -1,18 +1,26 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import type { TextEntry } from "../App";
+import { Plus, X } from "lucide-react";
+import type { TextEntry, FlashCard } from "../App";
 
 interface TextReaderProps {
   texts: TextEntry[];
   vocabulary: Set<string>;
+  cards: FlashCard[];
   onAddWord: (word: string, context: string) => void;
 }
 
-export function TextReader({ texts, vocabulary, onAddWord }: TextReaderProps) {
+export function TextReader({
+  texts,
+  vocabulary,
+  cards,
+  onAddWord,
+}: TextReaderProps) {
   const [selectedText, setSelectedText] = useState<TextEntry | null>(
     texts.length > 0 ? texts[0] : null
   );
   const [selectedWord, setSelectedWord] = useState<string>("");
+  const [editedLemma, setEditedLemma] = useState<string>("");
+  const [selectedContext, setSelectedContext] = useState<string>("");
   const [showAddWordPopup, setShowAddWordPopup] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
@@ -24,8 +32,16 @@ export function TextReader({ texts, vocabulary, onAddWord }: TextReaderProps) {
       const range = selection?.getRangeAt(0);
       const rect = range?.getBoundingClientRect();
 
-      if (rect) {
+      if (rect && selectedText) {
+        // Get the full sentence containing the selected word for better context
+        const sentences = selectedText.content.split(/[.!?]+/);
+        const contextSentence =
+          sentences.find((s) => s.toLowerCase().includes(text.toLowerCase())) ||
+          text;
+
         setSelectedWord(text);
+        setEditedLemma(text); // Lemma can be edited, but pre-fill it with the selected word
+        setSelectedContext(contextSentence.trim());
         setPopupPosition({ x: rect.left + rect.width / 2, y: rect.top - 10 });
         setShowAddWordPopup(true);
       }
@@ -35,36 +51,67 @@ export function TextReader({ texts, vocabulary, onAddWord }: TextReaderProps) {
   };
 
   const handleAddWord = () => {
-    if (selectedText && selectedWord) {
-      // Get context sentence
-      const sentences = selectedText.content.split(/[.!?]+/);
-      const contextSentence =
-        sentences.find((s) =>
-          s.toLowerCase().includes(selectedWord.toLowerCase())
-        ) || selectedWord;
-
-      onAddWord(selectedWord, contextSentence.trim());
+    if (editedLemma.trim() && selectedContext) {
+      onAddWord(editedLemma.trim(), selectedContext);
       setShowAddWordPopup(false);
+      setEditedLemma("");
+      setSelectedWord("");
+      setSelectedContext("");
       window.getSelection()?.removeAllRanges();
     }
   };
 
-  const highlightVocabulary = (text: string) => {
-    const words = text.split(/(\s+)/);
-    return words.map((word, index) => {
-      const cleanWord = word.toLowerCase().replace(/[.,!?;:]/g, "");
-      const isInVocabulary = vocabulary.has(cleanWord);
+  const handleCancelAdd = () => {
+    setShowAddWordPopup(false);
+    setEditedLemma("");
+    setSelectedWord("");
+    setSelectedContext("");
+    window.getSelection()?.removeAllRanges();
+  };
 
-      if (isInVocabulary) {
+  const highlightVocabulary = (text: string) => {
+    const words = text.split(/(\s+|[.,!?;:()"])/);
+    return words.map((word, index) => {
+      //Remove punctuation from the beginning and end of the word for accurate matching
+      const cleanWord = word
+        .toLowerCase()
+        .replace(/^[.,!?;:()"]+|[.,!?;:()"]+$/g, "");
+
+      // Check if the cleaned word is in the vocabulary
+      const isInVocabulary = cleanWord && vocabulary.has(cleanWord);
+
+      if (isInVocabulary && cleanWord === word.toLowerCase()) {
+        // Word without punctuation - highlight the whole word
         return (
           <span key={index} className="bg-blue-100 text-blue-800 rounded px-1">
             {word}
+          </span>
+        );
+      } else if (isInVocabulary && cleanWord !== word.toLowerCase()) {
+        const punctuationBefore = word.match(/^[.,!?;:()"]+/)?.[0] || "";
+        const punctuationAfter = word.match(/[.,!?;:()"]+$/)?.[0] || "";
+        const wordWithoutPunctuation = word.slice(
+          punctuationBefore.length,
+          word.length - punctuationAfter.length
+        );
+
+        return (
+          <span key={index}>
+            {punctuationBefore}
+            <span className="bg-blue-100 text-blue-800 rounded px-1">
+              {wordWithoutPunctuation}
+            </span>
+            {punctuationAfter}
           </span>
         );
       }
       return <span key={index}>{word}</span>;
     });
   };
+
+  const existingCard = cards.find(
+    (c) => c.word.toLowerCase() === editedLemma.toLowerCase()
+  );
 
   if (texts.length === 0) {
     return (
@@ -114,18 +161,89 @@ export function TextReader({ texts, vocabulary, onAddWord }: TextReaderProps) {
       )}
 
       {showAddWordPopup && (
-        <div
-          className="fixed z-50 transform -translate-x-1/2 -translate-y-full"
-          style={{ left: popupPosition.x, top: popupPosition.y }}
-        >
-          <button
-            onClick={handleAddWord}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors whitespace-nowrap"
+        <>
+          <div className="fixed inset-0 z-40" onClick={handleCancelAdd} />
+
+          <div
+            className="fixed z-50 transform -translate-x-1/2 -translate-y-full bg-white rounded-lg shadow-2xl border border-gray-200"
+            style={{
+              left: popupPosition.x,
+              top: popupPosition.y,
+              width: "320px",
+            }}
           >
-            <Plus className="w-4 h-4" />
-            Add to dictionary
-          </button>
-        </div>
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm text-gray-700">
+                  {existingCard
+                    ? "Add context to existing word"
+                    : "Add new word"}
+                </h3>
+                <button
+                  onClick={handleCancelAdd}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-1">
+                  Selected: <span className="font-medium">{selectedWord}</span>
+                </label>
+                <label className="block text-xs text-gray-600 mb-1">
+                  {existingCard
+                    ? "Word in the dictionary"
+                    : "Lemma (basic form):"}
+                </label>
+                <input
+                  type="text"
+                  value={editedLemma}
+                  onChange={(e) => setEditedLemma(e.target.value)}
+                  placeholder="For example: hyvä, tulla"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddWord();
+                    if (e.key === "Escape") handleCancelAdd();
+                  }}
+                />
+              </div>
+
+              {existingCard && (
+                <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                  📝 This word is already in the dicionary (
+                  {existingCard.contexts.length}{" "}
+                  {existingCard.contexts.length === 1
+                    ? "контекст"
+                    : "контекстов"}
+                  )
+                </div>
+              )}
+
+              <div className="mb-3">
+                <label className="block text-xs text-gray-600 mb-1">
+                  Context:
+                </label>
+                <textarea
+                  value={selectedContext}
+                  onChange={(e) => setSelectedContext(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <button
+                onClick={handleAddWord}
+                disabled={!editedLemma.trim()}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                {existingCard ? "Add context" : "Add word"}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

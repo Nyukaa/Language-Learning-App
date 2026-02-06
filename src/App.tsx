@@ -12,7 +12,7 @@ import { AddTextModal } from "./components/AddTextModal";
 export interface FlashCard {
   id: string;
   word: string;
-  context: string;
+  contexts: string[]; // Array of sentences or phrases where the word is used
   language: string;
   knowledgeLevel: 0 | 1 | 2; // 0: Don't know, 1: Almost, 2: Know
   repetitions: number;
@@ -30,7 +30,6 @@ export interface TextEntry {
 
 export type Language = "ru" | "fi" | "en";
 export type Screen = "main" | "card-detail" | "dictionary" | "progress";
-
 export type MainView = "cards" | "text";
 
 export default function App() {
@@ -48,7 +47,6 @@ export default function App() {
   useEffect(() => {
     const savedCards = localStorage.getItem("languageCards");
     const savedTexts = localStorage.getItem("languageTexts");
-    //const savedDiary = localStorage.getItem("languageDiary");
     const savedVocabulary = localStorage.getItem("languageVocabulary");
 
     if (savedCards) {
@@ -56,6 +54,7 @@ export default function App() {
       setCards(
         parsedCards.map((card: any) => ({
           ...card,
+          contexts: card.contexts || [card.context], // Миграция старых данных
           lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
           createdAt: new Date(card.createdAt),
         }))
@@ -95,7 +94,7 @@ export default function App() {
     const newCard: FlashCard = {
       id: Date.now().toString(),
       word,
-      context,
+      contexts: [context],
       language: currentLanguage,
       knowledgeLevel: 0,
       repetitions: 0,
@@ -107,18 +106,24 @@ export default function App() {
   };
 
   const updateCardKnowledge = (cardId: string, level: 0 | 1 | 2) => {
-    setCards(
-      cards.map((card) =>
-        card.id === cardId
-          ? {
-              ...card,
-              knowledgeLevel: level,
-              repetitions: card.repetitions + 1,
-              lastReviewed: new Date(),
-            }
-          : card
-      )
+    const updatedCards = cards.map((card) =>
+      card.id === cardId
+        ? {
+            ...card,
+            knowledgeLevel: level,
+            repetitions: card.repetitions + 1,
+            lastReviewed: new Date(),
+          }
+        : card
     );
+    setCards(updatedCards);
+
+    if (selectedCard?.id === cardId) {
+      const updatedCard = updatedCards.find((card) => card.id === cardId);
+      if (updatedCard) {
+        setSelectedCard(updatedCard);
+      }
+    }
   };
 
   const addText = (title: string, content: string) => {
@@ -133,7 +138,42 @@ export default function App() {
   };
 
   const addWordFromText = (word: string, context: string) => {
-    addCard(word, context);
+    const existingCard = cards.find(
+      (card) =>
+        card.word.toLowerCase() === word.toLowerCase() &&
+        card.language === currentLanguage
+    );
+
+    if (existingCard) {
+      const contextExists = existingCard.contexts.some(
+        (ctx) => ctx.trim().toLowerCase() === context.trim().toLowerCase()
+      );
+
+      if (contextExists) {
+        alert("Этот контекст уже добавлен к карточке");
+        return;
+      }
+
+      setCards(
+        cards.map((card) =>
+          card.id === existingCard.id
+            ? { ...card, contexts: [...card.contexts, context] }
+            : card
+        )
+      );
+    } else {
+      addCard(word, context);
+    }
+  };
+
+  const updateCard = (cardId: string, updates: Partial<FlashCard>) => {
+    setCards(
+      cards.map((card) => (card.id === cardId ? { ...card, ...updates } : card))
+    );
+
+    if (selectedCard?.id === cardId) {
+      setSelectedCard({ ...selectedCard, ...updates });
+    }
   };
 
   const deleteCard = (cardId: string) => {
@@ -170,6 +210,7 @@ export default function App() {
           <TextReader
             texts={texts.filter((t) => t.language === currentLanguage)}
             vocabulary={vocabulary}
+            cards={filteredCards}
             onAddWord={addWordFromText}
           />
         )}
@@ -178,6 +219,7 @@ export default function App() {
           <CardDetail
             card={selectedCard}
             onUpdateKnowledge={updateCardKnowledge}
+            onUpdateCard={updateCard}
             onBack={() => setCurrentScreen("main")}
             onDelete={deleteCard}
           />

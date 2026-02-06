@@ -7,9 +7,9 @@ interface CardProps {
 }
 
 const knowledgeLevelColors = {
-  0: "bg-gray-200 text-gray-700", // Не знаю
-  1: "bg-yellow-200 text-yellow-800", // Почти знаю
-  2: "bg-green-200 text-green-800", // Знаю
+  0: "bg-gray-200 text-gray-700",
+  1: "bg-yellow-200 text-yellow-800",
+  2: "bg-green-200 text-green-800",
 };
 
 const knowledgeLevelBorders = {
@@ -35,7 +35,13 @@ export function Card({ card, onClick, onUpdateKnowledge }: CardProps) {
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
           <h3 className="font-medium text-lg mb-1">{card.word}</h3>
-          <p className="text-sm text-gray-600 italic">{card.context}</p>
+          <p className="text-sm text-gray-600 italic">{card.contexts[0]}</p>
+          {card.contexts.length > 1 && (
+            <p className="text-xs text-blue-600 mt-1">
+              +{card.contexts.length - 1}{" "}
+              {card.contexts.length === 2 ? "контекст" : "контекстов"}
+            </p>
+          )}
         </div>
         <div
           className={`px-3 py-1 rounded-full text-xs font-medium ${

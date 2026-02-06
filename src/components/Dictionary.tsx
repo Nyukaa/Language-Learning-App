@@ -21,15 +21,17 @@ export function Dictionary({
   const filteredCards = cards.filter(
     (card) =>
       card.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.context.toLowerCase().includes(searchQuery.toLowerCase())
+      card.contexts.some((ctx) =>
+        ctx.toLowerCase().includes(searchQuery.toLowerCase())
+      )
   );
 
   const sortedCards = [...filteredCards].sort((a, b) => {
     switch (sortBy) {
       case "frequency":
-        return b.repetitions - a.repetitions;
+        return a.repetitions - b.repetitions; // По возрастанию: меньше повторений сначала
       case "knowledge":
-        return b.knowledgeLevel - a.knowledgeLevel;
+        return a.knowledgeLevel - b.knowledgeLevel; // По возрастанию: хуже знание сначала
       case "date":
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -113,13 +115,19 @@ export function Dictionary({
               <div className="flex-1">
                 <h3 className="font-medium mb-1">{card.word}</h3>
                 <p className="text-sm text-gray-600 italic mb-2">
-                  {card.context}
+                  {card.contexts[0]}
                 </p>
+                {card.contexts.length > 1 && (
+                  <p className="text-xs text-blue-600 mb-2">
+                    +{card.contexts.length - 1}{" "}
+                    {card.contexts.length === 2 ? "context" : "contexts"}
+                  </p>
+                )}
                 <div className="flex gap-3 text-xs text-gray-500">
                   <span>Repetitions: {card.repetitions}</span>
                   <span>•</span>
                   <span>
-                    {new Date(card.createdAt).toLocaleDateString("ru-RU")}
+                    {new Date(card.createdAt).toLocaleDateString("en-Us")}
                   </span>
                 </div>
               </div>
