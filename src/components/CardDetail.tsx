@@ -85,8 +85,8 @@ export function CardDetail({
               <div className="font-medium mb-1">Last review</div>
               <div className="text-gray-900">
                 {card.lastReviewed
-                  ? new Date(card.lastReviewed).toLocaleDateString("ru-RU")
-                  : "Никогда"}
+                  ? new Date(card.lastReviewed).toLocaleDateString("en-US")
+                  : "Never"}
               </div>
             </div>
           </div>
