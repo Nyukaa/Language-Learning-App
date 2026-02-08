@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Search } from "lucide-react";
+import { Trash2, Search, Tag } from "lucide-react";
 import type { FlashCard } from "../App";
 
 interface DictionaryProps {
@@ -17,14 +17,29 @@ export function Dictionary({
 }: DictionaryProps) {
   const [sortBy, setSortBy] = useState<SortBy>("date");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const filteredCards = cards.filter(
-    (card) =>
-      card.word.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  // get unique categories for filter dropdown
+  const categories = Array.from(
+    new Set(cards.map((card) => card.category).filter((cat) => cat !== ""))
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filteredCards = cards.filter((card) => {
+    // filter by search query
+    const matchesSearch =
+      card.lemma.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.translation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       card.contexts.some((ctx) =>
         ctx.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-  );
+      );
+
+    // filter by selected category
+    const matchesCategory =
+      selectedCategory === "all" || card.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   const sortedCards = [...filteredCards].sort((a, b) => {
     switch (sortBy) {
@@ -100,6 +115,29 @@ export function Dictionary({
             By knowledge
           </button>
         </div>
+
+        <div className="mt-4">
+          <div className="relative">
+            <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none bg-white cursor-pointer"
+            >
+              <option value="all">All categories ({cards.length})</option>
+              {categories.map((category) => {
+                const count = cards.filter(
+                  (c) => c.category === category
+                ).length;
+                return (
+                  <option key={category} value={category}>
+                    {category} ({count})
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -113,7 +151,20 @@ export function Dictionary({
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="font-medium mb-1">{card.word}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-medium">{card.lemma}</h3>
+                  {card.category && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">
+                      <Tag className="w-3 h-3" />
+                      {card.category}
+                    </span>
+                  )}
+                </div>
+                {card.translation && (
+                  <p className="text-sm text-gray-500 mb-1">
+                    {card.translation}
+                  </p>
+                )}
                 <p className="text-sm text-gray-600 italic mb-2">
                   {card.contexts[0]}
                 </p>

@@ -12,7 +12,10 @@ import { AddTextModal } from "./components/AddTextModal";
 export interface FlashCard {
   id: string;
   word: string;
-  contexts: string[]; // Array of sentences or phrases where the word is used
+  lemma: string;
+  translation: string;
+  category: string;
+  contexts: string[];
   language: string;
   knowledgeLevel: 0 | 1 | 2; // 0: Don't know, 1: Almost, 2: Know
   repetitions: number;
@@ -54,7 +57,10 @@ export default function App() {
       setCards(
         parsedCards.map((card: any) => ({
           ...card,
-          contexts: card.contexts || [card.context], // Миграция старых данных
+          contexts: card.contexts || [card.context], // Migration
+          lemma: card.lemma || card.word, // Migration
+          translation: card.translation || "", // Migration
+          category: card.category || "", // Migration
           lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
           createdAt: new Date(card.createdAt),
         }))
@@ -94,6 +100,9 @@ export default function App() {
     const newCard: FlashCard = {
       id: Date.now().toString(),
       word,
+      lemma: word,
+      translation: "",
+      category: "",
       contexts: [context],
       language: currentLanguage,
       knowledgeLevel: 0,
@@ -137,7 +146,7 @@ export default function App() {
     setTexts([newText, ...texts]);
   };
 
-  const addWordFromText = (word: string, context: string) => {
+  const addWordFromText = (word: string, lemma: string, context: string) => {
     const existingCard = cards.find(
       (card) =>
         card.word.toLowerCase() === word.toLowerCase() &&
@@ -162,7 +171,21 @@ export default function App() {
         )
       );
     } else {
-      addCard(word, context);
+      const newCard: FlashCard = {
+        id: Date.now().toString(),
+        word,
+        lemma,
+        translation: "",
+        category: "",
+        contexts: [context],
+        language: currentLanguage,
+        knowledgeLevel: 0,
+        repetitions: 0,
+        lastReviewed: null,
+        createdAt: new Date(),
+      };
+      setCards([newCard, ...cards]);
+      setVocabulary(new Set([...vocabulary, word.toLowerCase()]));
     }
   };
 

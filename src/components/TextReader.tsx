@@ -6,7 +6,7 @@ interface TextReaderProps {
   texts: TextEntry[];
   vocabulary: Set<string>;
   cards: FlashCard[];
-  onAddWord: (word: string, context: string) => void;
+  onAddWord: (word: string, lemma: string, context: string) => void;
 }
 
 export function TextReader({
@@ -33,7 +33,6 @@ export function TextReader({
       const rect = range?.getBoundingClientRect();
 
       if (rect && selectedText) {
-        // Get the full sentence containing the selected word for better context
         const sentences = selectedText.content.split(/[.!?]+/);
         const contextSentence =
           sentences.find((s) => s.toLowerCase().includes(text.toLowerCase())) ||
@@ -52,7 +51,7 @@ export function TextReader({
 
   const handleAddWord = () => {
     if (editedLemma.trim() && selectedContext) {
-      onAddWord(editedLemma.trim(), selectedContext);
+      onAddWord(selectedWord, editedLemma.trim(), selectedContext);
       setShowAddWordPopup(false);
       setEditedLemma("");
       setSelectedWord("");
@@ -162,6 +161,7 @@ export function TextReader({
 
       {showAddWordPopup && (
         <>
+          {/* Overlay  */}
           <div className="fixed inset-0 z-40" onClick={handleCancelAdd} />
 
           <div
@@ -191,35 +191,38 @@ export function TextReader({
                 <label className="block text-xs text-gray-600 mb-1">
                   Selected: <span className="font-medium">{selectedWord}</span>
                 </label>
-                <label className="block text-xs text-gray-600 mb-1">
-                  {existingCard
-                    ? "Word in the dictionary"
-                    : "Lemma (basic form):"}
-                </label>
-                <input
-                  type="text"
-                  value={editedLemma}
-                  onChange={(e) => setEditedLemma(e.target.value)}
-                  placeholder="For example: hyvä, tulla"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddWord();
-                    if (e.key === "Escape") handleCancelAdd();
-                  }}
-                />
+                {existingCard ? (
+                  <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                    <div className="font-medium text-blue-900 mb-1">
+                      Lemma: {existingCard.lemma}
+                    </div>
+                    <div className="text-blue-700">
+                      {existingCard.contexts.length}{" "}
+                      {existingCard.contexts.length === 1
+                        ? "context"
+                        : "contexts"}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <label className="block text-xs text-gray-600 mb-1 mt-2">
+                      Lemma(basic form):
+                    </label>
+                    <input
+                      type="text"
+                      value={editedLemma}
+                      onChange={(e) => setEditedLemma(e.target.value)}
+                      placeholder="For example: hyvä, tulla"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddWord();
+                        if (e.key === "Escape") handleCancelAdd();
+                      }}
+                    />
+                  </>
+                )}
               </div>
-
-              {existingCard && (
-                <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                  📝 This word is already in the dicionary (
-                  {existingCard.contexts.length}{" "}
-                  {existingCard.contexts.length === 1
-                    ? "контекст"
-                    : "контекстов"}
-                  )
-                </div>
-              )}
 
               <div className="mb-3">
                 <label className="block text-xs text-gray-600 mb-1">

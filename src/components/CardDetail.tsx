@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Trash2, Edit2, Check, X } from "lucide-react";
+import { ArrowLeft, Trash2, Edit2, Check, X, Tag } from "lucide-react";
 import type { FlashCard } from "../App";
 
 interface CardDetailProps {
@@ -17,8 +17,12 @@ export function CardDetail({
   onBack,
   onDelete,
 }: CardDetailProps) {
-  const [isEditingWord, setIsEditingWord] = useState(false);
-  const [editedWord, setEditedWord] = useState(card.word);
+  const [isEditingLemma, setIsEditingLemma] = useState(false);
+  const [editedLemma, setEditedLemma] = useState(card.lemma);
+  const [isEditingTranslation, setIsEditingTranslation] = useState(false);
+  const [editedTranslation, setEditedTranslation] = useState(card.translation);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [editedCategory, setEditedCategory] = useState(card.category);
   const [editingContextIndex, setEditingContextIndex] = useState<number | null>(
     null
   );
@@ -31,16 +35,36 @@ export function CardDetail({
     }
   };
 
-  const handleSaveWord = () => {
-    if (editedWord.trim()) {
-      onUpdateCard(card.id, { word: editedWord.trim() });
-      setIsEditingWord(false);
+  const handleSaveLemma = () => {
+    if (editedLemma.trim()) {
+      onUpdateCard(card.id, { lemma: editedLemma.trim() });
+      setIsEditingLemma(false);
     }
   };
 
-  const handleCancelWordEdit = () => {
-    setEditedWord(card.word);
-    setIsEditingWord(false);
+  const handleCancelLemmaEdit = () => {
+    setEditedLemma(card.lemma);
+    setIsEditingLemma(false);
+  };
+
+  const handleSaveTranslation = () => {
+    onUpdateCard(card.id, { translation: editedTranslation.trim() });
+    setIsEditingTranslation(false);
+  };
+
+  const handleCancelTranslationEdit = () => {
+    setEditedTranslation(card.translation);
+    setIsEditingTranslation(false);
+  };
+
+  const handleSaveCategory = () => {
+    onUpdateCard(card.id, { category: editedCategory.trim() });
+    setIsEditingCategory(false);
+  };
+
+  const handleCancelCategoryEdit = () => {
+    setEditedCategory(card.category);
+    setIsEditingCategory(false);
   };
 
   const handleStartEditContext = (index: number) => {
@@ -84,7 +108,7 @@ export function CardDetail({
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5" />
-          Back
+          Назад
         </button>
 
         <button
@@ -98,27 +122,27 @@ export function CardDetail({
 
       <div className="bg-white rounded-lg p-8 shadow-sm">
         <div className="text-center mb-8">
-          {isEditingWord ? (
+          {isEditingLemma ? (
             <div className="flex items-center justify-center gap-2 mb-4">
               <input
                 type="text"
-                value={editedWord}
-                onChange={(e) => setEditedWord(e.target.value)}
+                value={editedLemma}
+                onChange={(e) => setEditedLemma(e.target.value)}
                 className="text-4xl font-medium text-center border-b-2 border-blue-500 focus:outline-none"
                 autoFocus
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveWord();
-                  if (e.key === "Escape") handleCancelWordEdit();
+                  if (e.key === "Enter") handleSaveLemma();
+                  if (e.key === "Escape") handleCancelLemmaEdit();
                 }}
               />
               <button
-                onClick={handleSaveWord}
+                onClick={handleSaveLemma}
                 className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
               >
                 <Check className="w-5 h-5" />
               </button>
               <button
-                onClick={handleCancelWordEdit}
+                onClick={handleCancelLemmaEdit}
                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
               >
                 <X className="w-5 h-5" />
@@ -126,13 +150,123 @@ export function CardDetail({
             </div>
           ) : (
             <div className="flex items-center justify-center gap-3 mb-4">
-              <h1 className="text-4xl font-medium">{card.word}</h1>
+              <h1 className="text-4xl font-medium">{card.lemma}</h1>
               <button
-                onClick={() => setIsEditingWord(true)}
+                onClick={() => setIsEditingLemma(true)}
                 className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <Edit2 className="w-5 h-5" />
               </button>
+            </div>
+          )}
+
+          {card.word !== card.lemma && (
+            <div className="text-sm text-gray-500 mb-2">
+              (from text: <span className="italic">{card.word}</span>)
+            </div>
+          )}
+
+          {isEditingTranslation ? (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <input
+                type="text"
+                value={editedTranslation}
+                onChange={(e) => setEditedTranslation(e.target.value)}
+                placeholder="Add translation..."
+                className="text-xl text-gray-700 text-center border-b-2 border-blue-500 focus:outline-none"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveTranslation();
+                  if (e.key === "Escape") handleCancelTranslationEdit();
+                }}
+              />
+              <button
+                onClick={handleSaveTranslation}
+                className="p-1 text-green-600 hover:bg-green-50 rounded-lg"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleCancelTranslationEdit}
+                className="p-1 text-red-600 hover:bg-red-50 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 mb-4">
+              {card.translation ? (
+                <>
+                  <p className="text-xl text-gray-700">{card.translation}</p>
+                  <button
+                    onClick={() => setIsEditingTranslation(true)}
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsEditingTranslation(true)}
+                  className="text-sm text-gray-400 hover:text-blue-600 transition-colors"
+                >
+                  + Add translation
+                </button>
+              )}
+            </div>
+          )}
+
+          {isEditingCategory ? (
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <input
+                type="text"
+                value={editedCategory}
+                onChange={(e) => setEditedCategory(e.target.value)}
+                placeholder="Category..."
+                className="text-sm px-3 py-1 border-2 border-blue-500 rounded-full focus:outline-none"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveCategory();
+                  if (e.key === "Escape") handleCancelCategoryEdit();
+                }}
+              />
+              <button
+                onClick={handleSaveCategory}
+                className="p-1 text-green-600 hover:bg-green-50 rounded-lg"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleCancelCategoryEdit}
+                className="p-1 text-red-600 hover:bg-red-50 rounded-lg"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2 mb-6">
+              {card.category ? (
+                <>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                    <Tag className="w-3 h-3" />
+                    {card.category}
+                  </span>
+                  <button
+                    onClick={() => setIsEditingCategory(true)}
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsEditingCategory(true)}
+                  className="text-xs text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                >
+                  <Tag className="w-3 h-3" />
+                  Add category
+                </button>
+              )}
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import type { FlashCard } from "../App";
+import { Tag } from "lucide-react";
 
 interface CardProps {
   card: FlashCard;
@@ -34,7 +35,18 @@ export function Card({ card, onClick, onUpdateKnowledge }: CardProps) {
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
-          <h3 className="font-medium text-lg mb-1">{card.word}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-medium text-lg">{card.lemma}</h3>
+            {card.category && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">
+                <Tag className="w-3 h-3" />
+                {card.category}
+              </span>
+            )}
+          </div>
+          {card.translation && (
+            <p className="text-sm text-gray-500 mb-1">{card.translation}</p>
+          )}
           <p className="text-sm text-gray-600 italic">{card.contexts[0]}</p>
           {card.contexts.length > 1 && (
             <p className="text-xs text-blue-600 mt-1">
