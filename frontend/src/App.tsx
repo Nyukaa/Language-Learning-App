@@ -113,8 +113,8 @@ export default function App() {
 
   //
   const updateKnowledgeLevel = (cardId: string, level: 0 | 1 | 2) => {
-    setCards((prev) =>
-      prev.map((card) =>
+    setCards((prev) => {
+      const newCards = prev.map((card) =>
         card.id === cardId
           ? {
               ...card,
@@ -123,8 +123,13 @@ export default function App() {
               lastReviewed: new Date(),
             }
           : card
-      )
-    );
+      );
+      // Обновляем selectedCard, если это она
+      if (selectedCard?.id === cardId) {
+        setSelectedCard(newCards.find((c) => c.id === cardId) || null);
+      }
+      return newCards;
+    });
   };
 
   const addText = (title: string, content: string) => {
