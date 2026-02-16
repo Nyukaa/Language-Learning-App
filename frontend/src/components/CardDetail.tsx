@@ -27,7 +27,11 @@ export function CardDetail({
     null
   );
   const [editedContext, setEditedContext] = useState("");
-
+  const [localKnowledge, setLocalKnowledge] = useState(card.knowledgeLevel);
+  // const handleKnowledgeClick = (level: 0 | 1 | 2) => {
+  //   setLocalKnowledge(level); // обновляем сразу локально
+  //   onUpdateKnowledge(card.id, level); // вызываем родителя для сохранения
+  // };
   const handleDelete = () => {
     if (confirm("Delete this card?")) {
       onDelete(card.id);
