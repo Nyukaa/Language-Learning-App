@@ -7,6 +7,8 @@ interface HeaderProps {
   onAddCard: () => void;
   onAddText: () => void;
   showAddButtons: boolean;
+
+  onLogin?: () => void;
 }
 
 const languageNames: Record<Language, string> = {
@@ -21,6 +23,7 @@ export function Header({
   onAddCard,
   onAddText,
   showAddButtons,
+  onLogin,
 }: HeaderProps) {
   const today = new Date();
   const dateStr = today.toLocaleDateString("en-US", {
@@ -44,7 +47,18 @@ export function Header({
               </option>
             ))}
           </select>
-
+          <div className="flex gap-2">
+            {showAddButtons && (
+              <>
+                <button
+                  onClick={onLogin}
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Sign in with Google
+                </button>
+              </>
+            )}
+          </div>
           <div className="text-sm text-gray-600 capitalize">{dateStr}</div>
         </div>
 

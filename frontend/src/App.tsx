@@ -8,7 +8,7 @@ import { Dictionary } from "./components/Dictionary";
 import { Progress } from "./components/Progress";
 import { AddCardModal } from "./components/AddCardModal";
 import { AddTextModal } from "./components/AddTextModal";
-
+import { supabase } from "../supabaseClient";
 export interface FlashCard {
   id: string;
   word: string;
@@ -47,6 +47,68 @@ export default function App() {
   const [showAddTextModal, setShowAddTextModal] = useState(false);
   //const [vocabulary, setVocabulary] = useState<Set<string>>(new Set());
   const normalize = (text: string) => text.trim().toLowerCase();
+  // for logging in with Google OAuth using Supabase
+  const login = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+    if (error) {
+      console.error("Login error:", error.message);
+    }
+  };
+  // After login , get the access token and send it to the backend
+  // useEffect(() => {
+  //   const handleAuth = async () => {
+  //     // 1️⃣ Обрабатываем OAuth redirect
+  //     const { data, error } = await supabase.auth.exchangeCodeForSession(
+  //       window.location.href
+  //     );
+
+  //     if (error) {
+  //       console.error("Exchange error:", error.message);
+  //     }
+
+  //     // 2️⃣ Получаем session
+  //     const { data: sessionData } = await supabase.auth.getSession();
+
+  //     if (!sessionData.session) return;
+
+  //     const token = sessionData.session.access_token;
+
+  //     console.log("Token:", token);
+
+  //     // 3️⃣ Отправляем в backend
+  //     await fetch("http://localhost:4000/api/protected", {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //   };
+
+  //   handleAuth();
+  // }, []);
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+      console.log("TOKEN:", data.session?.access_token);
+      if (data.session) {
+        const token = data.session.access_token;
+
+        await fetch("http://localhost:4000/api/protected", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    };
+
+    checkSession();
+  }, []);
 
   // Load data from localStorage
   useEffect(() => {
@@ -294,6 +356,7 @@ export default function App() {
         onAddCard={() => setShowAddCardModal(true)}
         onAddText={() => setShowAddTextModal(true)}
         showAddButtons={currentScreen === "main"}
+        onLogin={login}
       />
 
       <main className="flex-1 pb-20">
