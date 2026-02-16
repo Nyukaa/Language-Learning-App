@@ -27,26 +27,18 @@ export function TextReader({
   const handleTextSelection = () => {
     const selection = window.getSelection();
     const text = selection?.toString().trim();
+    const rect = selection?.getRangeAt(0).getBoundingClientRect();
+    if (!text || text.includes(" ")) return setShowAddWordPopup(false);
 
-    if (text && text.length > 0 && !text.includes(" ")) {
-      const range = selection?.getRangeAt(0);
-      const rect = range?.getBoundingClientRect();
+    const sentenceEl =
+      selection?.anchorNode?.parentElement?.closest(".js-sentence");
+    if (!sentenceEl || !selectedText || !rect) return;
 
-      if (rect && selectedText) {
-        const sentences = selectedText.content.split(/[.!?]+/);
-        const contextSentence =
-          sentences.find((s) => s.toLowerCase().includes(text.toLowerCase())) ||
-          text;
-
-        setSelectedWord(text);
-        setEditedLemma(text); // Lemma can be edited, but pre-fill it with the selected word
-        setSelectedContext(contextSentence.trim());
-        setPopupPosition({ x: rect.left + rect.width / 2, y: rect.top - 10 });
-        setShowAddWordPopup(true);
-      }
-    } else {
-      setShowAddWordPopup(false);
-    }
+    setSelectedWord(text);
+    setEditedLemma(text);
+    setSelectedContext(sentenceEl.textContent?.trim() || text);
+    setPopupPosition({ x: rect.left + rect.width / 2, y: rect.top - 10 });
+    setShowAddWordPopup(true);
   };
 
   const handleAddWord = () => {
@@ -69,49 +61,73 @@ export function TextReader({
   };
 
   const highlightVocabulary = (text: string) => {
-    const words = text.split(/(\s+|[.,!?;:()"])/);
-    return words.map((word, index) => {
-      //Remove punctuation from the beginning and end of the word for accurate matching
-      const cleanWord = word
-        .toLowerCase()
-        .replace(/^[.,!?;:()"]+|[.,!?;:()"]+$/g, "");
+    // Split text into sentences
+    const sentences = text.split(/(?<=[.!?])\s+|\n+/).filter(Boolean);
 
-      // Check if the cleaned word is in the vocabulary
-      const isInVocabulary = cleanWord && vocabulary.has(cleanWord);
+    return sentences.map((sentence, i) => {
+      // Split sentence into words & punctuation for highlighting
+      const words = sentence.split(/(\s+|[.,!?;:()"])/);
 
-      if (isInVocabulary && cleanWord === word.toLowerCase()) {
-        // Word without punctuation - highlight the whole word
-        return (
-          <span key={index} className="bg-blue-100 text-blue-800 rounded px-1">
-            {word}
-          </span>
-        );
-      } else if (isInVocabulary && cleanWord !== word.toLowerCase()) {
-        const punctuationBefore = word.match(/^[.,!?;:()"]+/)?.[0] || "";
-        const punctuationAfter = word.match(/[.,!?;:()"]+$/)?.[0] || "";
-        const wordWithoutPunctuation = word.slice(
-          punctuationBefore.length,
-          word.length - punctuationAfter.length
-        );
+      const highlightedWords = words.map((word, index) => {
+        const cleanWord = word
+          .toLowerCase()
+          .replace(/^[.,!?;:()"]+|[.,!?;:()"]+$/g, "");
 
-        return (
-          <span key={index}>
-            {punctuationBefore}
-            <span className="bg-blue-100 text-blue-800 rounded px-1">
-              {wordWithoutPunctuation}
+        const isInVocabulary = cleanWord && vocabulary.has(cleanWord);
+
+        if (isInVocabulary && cleanWord === word.toLowerCase()) {
+          return (
+            <span
+              key={index}
+              className="bg-blue-100 text-blue-800 rounded px-1"
+            >
+              {word}
             </span>
-            {punctuationAfter}
-          </span>
-        );
-      }
-      return <span key={index}>{word}</span>;
+          );
+        } else if (isInVocabulary && cleanWord !== word.toLowerCase()) {
+          const punctuationBefore = word.match(/^[.,!?;:()"]+/)?.[0] || "";
+          const punctuationAfter = word.match(/[.,!?;:()"]+$/)?.[0] || "";
+          const wordWithoutPunctuation = word.slice(
+            punctuationBefore.length,
+            word.length - punctuationAfter.length
+          );
+
+          return (
+            <span key={index}>
+              {punctuationBefore}
+              <span className="bg-blue-100 text-blue-800 rounded px-1">
+                {wordWithoutPunctuation}
+              </span>
+              {punctuationAfter}
+            </span>
+          );
+        }
+        return <span key={index}>{word}</span>;
+      });
+
+      return (
+        <span key={i} className="js-sentence">
+          {highlightedWords} {/* keep spacing between sentences */}
+        </span>
+      );
     });
   };
 
-  const existingCard = cards.find(
-    (c) => c.word.toLowerCase() === editedLemma.toLowerCase()
-  );
+  // const existingCard = cards.find(
+  //   (c) => c.word.toLowerCase() === editedLemma.toLowerCase()
+  // );
+  const normalize = (text: string) => text.trim().toLowerCase();
 
+  const existingCard = cards.find((c) => {
+    const normalizedLemma = normalize(editedLemma);
+    const cardLemma = normalize(c.lemma);
+    const cardForms = (c.wordForms || []).map(normalize);
+
+    return (
+      cardLemma === normalizedLemma ||
+      cardForms.includes(normalize(selectedWord))
+    );
+  });
   if (texts.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">

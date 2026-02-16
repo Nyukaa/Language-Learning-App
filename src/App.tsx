@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Header } from "./components/Header";
 import { BottomNav } from "./components/BottomNav";
 import { CardList } from "./components/CardList";
@@ -13,6 +13,7 @@ export interface FlashCard {
   id: string;
   word: string;
   lemma: string;
+  wordForms: string[]; //all forms of the word (for better search and recognition)
   translation: string;
   category: string;
   contexts: string[];
@@ -44,28 +45,31 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [showAddTextModal, setShowAddTextModal] = useState(false);
-  const [vocabulary, setVocabulary] = useState<Set<string>>(new Set());
+  //const [vocabulary, setVocabulary] = useState<Set<string>>(new Set());
+  const normalize = (text: string) => text.trim().toLowerCase();
 
   // Load data from localStorage
   useEffect(() => {
     const savedCards = localStorage.getItem("languageCards");
     const savedTexts = localStorage.getItem("languageTexts");
-    const savedVocabulary = localStorage.getItem("languageVocabulary");
 
     if (savedCards) {
       const parsedCards = JSON.parse(savedCards);
+
       setCards(
         parsedCards.map((card: any) => ({
           ...card,
-          contexts: card.contexts || [card.context], // Migration
-          lemma: card.lemma || card.word, // Migration
-          translation: card.translation || "", // Migration
-          category: card.category || "", // Migration
+          wordForms: card.wordForms || [card.word?.toLowerCase?.() || ""], // миграция
+          contexts: card.contexts || [card.context],
+          lemma: card.lemma || card.word,
+          translation: card.translation || "",
+          category: card.category || "",
           lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
           createdAt: new Date(card.createdAt),
         }))
       );
     }
+
     if (savedTexts) {
       const parsedTexts = JSON.parse(savedTexts);
       setTexts(
@@ -74,9 +78,6 @@ export default function App() {
           createdAt: new Date(text.createdAt),
         }))
       );
-    }
-    if (savedVocabulary) {
-      setVocabulary(new Set(JSON.parse(savedVocabulary)));
     }
   }, []);
 
@@ -89,18 +90,14 @@ export default function App() {
     localStorage.setItem("languageTexts", JSON.stringify(texts));
   }, [texts]);
 
-  useEffect(() => {
-    localStorage.setItem(
-      "languageVocabulary",
-      JSON.stringify(Array.from(vocabulary))
-    );
-  }, [vocabulary]);
-
   const addCard = (word: string, context: string) => {
+    const normalizedWord = normalize(word);
+
     const newCard: FlashCard = {
       id: Date.now().toString(),
       word,
       lemma: word,
+      wordForms: [normalizedWord],
       translation: "",
       category: "",
       contexts: [context],
@@ -110,29 +107,24 @@ export default function App() {
       lastReviewed: null,
       createdAt: new Date(),
     };
-    setCards([newCard, ...cards]);
-    setVocabulary(new Set([...vocabulary, word.toLowerCase()]));
+
+    setCards((prev) => [newCard, ...prev]);
   };
 
-  const updateCardKnowledge = (cardId: string, level: 0 | 1 | 2) => {
-    const updatedCards = cards.map((card) =>
-      card.id === cardId
-        ? {
-            ...card,
-            knowledgeLevel: level,
-            repetitions: card.repetitions + 1,
-            lastReviewed: new Date(),
-          }
-        : card
+  //
+  const updateKnowledgeLevel = (cardId: string, level: 0 | 1 | 2) => {
+    setCards((prev) =>
+      prev.map((card) =>
+        card.id === cardId
+          ? {
+              ...card,
+              knowledgeLevel: level,
+              repetitions: card.repetitions + 1,
+              lastReviewed: new Date(),
+            }
+          : card
+      )
     );
-    setCards(updatedCards);
-
-    if (selectedCard?.id === cardId) {
-      const updatedCard = updatedCards.find((card) => card.id === cardId);
-      if (updatedCard) {
-        setSelectedCard(updatedCard);
-      }
-    }
   };
 
   const addText = (title: string, content: string) => {
@@ -146,35 +138,110 @@ export default function App() {
     setTexts([newText, ...texts]);
   };
 
+  //   const existingCard = cards.find(
+  //     (card) =>
+  //       card.lemma.toLowerCase() === lemma.toLowerCase() &&
+  //       card.language === currentLanguage
+  //   );
+
+  //   if (existingCard) {
+  //     const contextExists = existingCard.contexts.some(
+  //       (ctx) => ctx.trim().toLowerCase() === context.trim().toLowerCase()
+  //     );
+
+  //     if (contextExists) {
+  //       alert("Этот контекст уже добавлен к карточке");
+  //       return;
+  //     }
+
+  //     setCards(
+  //       cards.map((card) =>
+  //         card.id === existingCard.id
+  //           ? { ...card, contexts: [...card.contexts, context] }
+  //           : card
+  //       )
+  //     );
+
+  //     // Добавляем новое исходное слово в vocabulary для подсветки
+  //     setVocabulary(new Set([...vocabulary, word.toLowerCase()]));
+  //   } else {
+  //     const newCard: FlashCard = {
+  //       id: Date.now().toString(),
+  //       word,
+  //       lemma,
+  //       translation: "",
+  //       category: "",
+  //       contexts: [context],
+  //       language: currentLanguage,
+  //       knowledgeLevel: 0,
+  //       repetitions: 0,
+  //       lastReviewed: null,
+  //       createdAt: new Date(),
+  //     };
+  //     setCards([newCard, ...cards]);
+  //     setVocabulary(new Set([...vocabulary, word.toLowerCase()]));
+  //   }
+  // };
   const addWordFromText = (word: string, lemma: string, context: string) => {
-    const existingCard = cards.find(
-      (card) =>
-        card.word.toLowerCase() === word.toLowerCase() &&
-        card.language === currentLanguage
-    );
+    console.log("=== ADD WORD DEBUG ===");
+    console.log("word:", word);
+    console.log("lemma:", lemma);
+    console.log("context:", context);
+    console.log("currentLanguage:", currentLanguage);
+    console.log("existing cards:", cards);
 
-    if (existingCard) {
-      const contextExists = existingCard.contexts.some(
-        (ctx) => ctx.trim().toLowerCase() === context.trim().toLowerCase()
-      );
+    const normalizedLemma = normalize(lemma);
+    const normalizedWord = normalize(word);
+    const normalizedContext = normalize(context);
 
-      if (contextExists) {
-        alert("Этот контекст уже добавлен к карточке");
-        return;
+    setCards((prevCards) => {
+      const existingCard = prevCards.find((card) => {
+        if (card.language !== currentLanguage) return false;
+
+        const cardLemma = normalize(card.lemma);
+        const cardForms = (card.wordForms || []).map(normalize);
+        console.log("checking card:", card.word);
+        console.log("cardLemma:", cardLemma);
+        console.log("cardForms:", cardForms);
+        return (
+          cardLemma === normalizedLemma || cardForms.includes(normalizedWord)
+        );
+      });
+
+      if (existingCard) {
+        return prevCards.map((card) => {
+          if (card.id !== existingCard.id) return card;
+
+          const safeWordForms = card.wordForms || [];
+          const safeContexts = card.contexts || [];
+          console.log("existing contexts:", safeContexts);
+          const wordExists = safeWordForms
+            .map(normalize)
+            .includes(normalizedWord);
+          console.log("normalizedContext:", normalizedContext);
+          console.log(
+            "normalized existing contexts:",
+            safeContexts.map(normalize)
+          );
+          const contextExists = safeContexts
+            .map(normalize)
+            .includes(normalizedContext);
+
+          return {
+            ...card,
+            wordForms: wordExists
+              ? safeWordForms
+              : [...safeWordForms, normalizedWord],
+            contexts: contextExists ? safeContexts : [...safeContexts, context],
+          };
+        });
       }
 
-      setCards(
-        cards.map((card) =>
-          card.id === existingCard.id
-            ? { ...card, contexts: [...card.contexts, context] }
-            : card
-        )
-      );
-    } else {
       const newCard: FlashCard = {
         id: Date.now().toString(),
         word,
         lemma,
+        wordForms: [normalizedWord],
         translation: "",
         category: "",
         contexts: [context],
@@ -184,9 +251,9 @@ export default function App() {
         lastReviewed: null,
         createdAt: new Date(),
       };
-      setCards([newCard, ...cards]);
-      setVocabulary(new Set([...vocabulary, word.toLowerCase()]));
-    }
+
+      return [newCard, ...prevCards];
+    });
   };
 
   const updateCard = (cardId: string, updates: Partial<FlashCard>) => {
@@ -206,7 +273,14 @@ export default function App() {
   const filteredCards = cards.filter(
     (card) => card.language === currentLanguage
   );
-
+  // vocabulary is all word forms of all cards in the current language, used for highlighting in TextReader
+  const vocabulary = useMemo(() => {
+    return new Set(
+      cards
+        .filter((c) => c.language === currentLanguage)
+        .flatMap((c) => c.wordForms)
+    );
+  }, [cards, currentLanguage]);
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header
@@ -225,7 +299,7 @@ export default function App() {
               setSelectedCard(card);
               setCurrentScreen("card-detail");
             }}
-            onUpdateKnowledge={updateCardKnowledge}
+            onUpdateKnowledge={updateKnowledgeLevel}
           />
         )}
 
@@ -241,7 +315,7 @@ export default function App() {
         {currentScreen === "card-detail" && selectedCard && (
           <CardDetail
             card={selectedCard}
-            onUpdateKnowledge={updateCardKnowledge}
+            onUpdateKnowledge={updateKnowledgeLevel}
             onUpdateCard={updateCard}
             onBack={() => setCurrentScreen("main")}
             onDelete={deleteCard}
