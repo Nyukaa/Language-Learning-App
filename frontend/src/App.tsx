@@ -9,6 +9,12 @@ import { Progress } from "./components/Progress";
 import { AddCardModal } from "./components/AddCardModal";
 import { AddTextModal } from "./components/AddTextModal";
 import { supabase } from "../supabaseClient";
+import { createFlashcard } from "./api";
+import { getFlashcards } from "./api";
+import { deleteFlashcard } from "./api";
+import { updateFlashcardKnowledge } from "./api";
+import { updateFlashcard } from "./api";
+
 export interface FlashCard {
   id: string;
   word: string;
@@ -111,88 +117,168 @@ export default function App() {
   }, []);
 
   // Load data from localStorage
+  // useEffect(() => {
+  //   const savedCards = localStorage.getItem("languageCards");
+  //   const savedTexts = localStorage.getItem("languageTexts");
+
+  //   if (savedCards) {
+  //     const parsedCards = JSON.parse(savedCards);
+
+  //     setCards(
+  //       parsedCards.map((card: any) => ({
+  //         ...card,
+  //         wordForms: card.wordForms || [card.word?.toLowerCase?.() || ""], // миграция
+  //         contexts: card.contexts || [card.context],
+  //         lemma: card.lemma || card.word,
+  //         translation: card.translation || "",
+  //         category: card.category || "",
+  //         lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
+  //         createdAt: new Date(card.createdAt),
+  //       }))
+  //     );
+  //   }
+
+  //   if (savedTexts) {
+  //     const parsedTexts = JSON.parse(savedTexts);
+  //     setTexts(
+  //       parsedTexts.map((text: any) => ({
+  //         ...text,
+  //         createdAt: new Date(text.createdAt),
+  //       }))
+  //     );
+  //   }
+  // }, []);
   useEffect(() => {
-    const savedCards = localStorage.getItem("languageCards");
-    const savedTexts = localStorage.getItem("languageTexts");
+    const loadFlashcards = async () => {
+      try {
+        const result = await getFlashcards();
 
-    if (savedCards) {
-      const parsedCards = JSON.parse(savedCards);
+        const formatted = result.flashcards.map((card: any) => ({
+          id: card.id,
+          word: card.word,
+          lemma: card.word,
+          wordForms: [card.word.toLowerCase()],
+          translation: card.translation,
+          category: "",
+          contexts: card.contexts.map((c: any) => c.sentence),
+          language: "en",
+          knowledgeLevel: card.learning_progress?.[0]?.level ?? 0,
+          repetitions: card.learning_progress?.[0]?.repetitions ?? 0,
+          lastReviewed: card.learning_progress?.[0]?.last_reviewed ?? null,
+          createdAt: new Date(card.created_at),
+        }));
 
-      setCards(
-        parsedCards.map((card: any) => ({
-          ...card,
-          wordForms: card.wordForms || [card.word?.toLowerCase?.() || ""], // миграция
-          contexts: card.contexts || [card.context],
-          lemma: card.lemma || card.word,
-          translation: card.translation || "",
-          category: card.category || "",
-          lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
-          createdAt: new Date(card.createdAt),
-        }))
-      );
-    }
+        setCards(formatted);
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
-    if (savedTexts) {
-      const parsedTexts = JSON.parse(savedTexts);
-      setTexts(
-        parsedTexts.map((text: any) => ({
-          ...text,
-          createdAt: new Date(text.createdAt),
-        }))
-      );
-    }
+    loadFlashcards();
   }, []);
 
   // Save data to localStorage
-  useEffect(() => {
-    localStorage.setItem("languageCards", JSON.stringify(cards));
-  }, [cards]);
+  // useEffect(() => {
+  //   localStorage.setItem("languageCards", JSON.stringify(cards));
+  // }, [cards]);
 
-  useEffect(() => {
-    localStorage.setItem("languageTexts", JSON.stringify(texts));
-  }, [texts]);
+  // useEffect(() => {
+  //   localStorage.setItem("languageTexts", JSON.stringify(texts));
+  // }, [texts]);
 
-  const addCard = (word: string, context: string) => {
-    const normalizedWord = normalize(word);
+  // const addCard = (word: string, context: string) => {
+  //   const normalizedWord = normalize(word);
 
-    const newCard: FlashCard = {
-      id: Date.now().toString(),
-      word,
-      lemma: word,
-      wordForms: [normalizedWord],
-      translation: "",
-      category: "",
-      contexts: [context],
-      language: currentLanguage,
-      knowledgeLevel: 0,
-      repetitions: 0,
-      lastReviewed: null,
-      createdAt: new Date(),
-    };
+  //   const newCard: FlashCard = {
+  //     id: Date.now().toString(),
+  //     word,
+  //     lemma: word,
+  //     wordForms: [normalizedWord],
+  //     translation: "",
+  //     category: "",
+  //     contexts: [context],
+  //     language: currentLanguage,
+  //     knowledgeLevel: 0,
+  //     repetitions: 0,
+  //     lastReviewed: null,
+  //     createdAt: new Date(),
+  //   };
 
-    setCards((prev) => [newCard, ...prev]);
+  //   setCards((prev) => [newCard, ...prev]);
+  // };
+  const addCard = async (word: string, context: string) => {
+    try {
+      const normalizedWord = normalize(word);
+
+      // calling backend to create flashcard and context in the database
+      const result = await createFlashcard(word, "", context);
+
+      const newCard: FlashCard = {
+        id: result.flashcard.id,
+        word,
+        lemma: word,
+        wordForms: [normalizedWord],
+        translation: result.flashcard.translation || "",
+        category: "",
+        contexts: [context],
+        language: currentLanguage,
+        knowledgeLevel: 0,
+        repetitions: 0,
+        lastReviewed: null,
+        createdAt: new Date(result.flashcard.created_at),
+      };
+
+      setCards((prev) => [newCard, ...prev]);
+    } catch (error) {
+      console.error("Error creating card:", error);
+    }
   };
 
   //
-  const updateKnowledgeLevel = (cardId: string, level: 0 | 1 | 2) => {
-    setCards((prev) => {
-      const newCards = prev.map((card) =>
-        card.id === cardId
-          ? {
-              ...card,
-              knowledgeLevel: level,
-              repetitions: card.repetitions + 1,
-              lastReviewed: new Date(),
-            }
-          : card
+  const updateKnowledgeLevel = async (cardId: string, level: 0 | 1 | 2) => {
+    try {
+      await updateFlashcardKnowledge(cardId, level);
+
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === cardId
+            ? {
+                ...card,
+                knowledgeLevel: level,
+                repetitions: card.repetitions + 1,
+                lastReviewed: new Date(),
+              }
+            : card
+        )
       );
-      // Обновляем selectedCard, если это она
+
       if (selectedCard?.id === cardId) {
-        setSelectedCard(newCards.find((c) => c.id === cardId) || null);
+        setSelectedCard((prev) => prev && { ...prev, knowledgeLevel: level });
       }
-      return newCards;
-    });
+    } catch (error) {
+      console.error(error);
+    }
   };
+
+  // const updateKnowledgeLevel = (cardId: string, level: 0 | 1 | 2) => {
+  //   setCards((prev) => {
+  //     const newCards = prev.map((card) =>
+  //       card.id === cardId
+  //         ? {
+  //             ...card,
+  //             knowledgeLevel: level,
+  //             repetitions: card.repetitions + 1,
+  //             lastReviewed: new Date(),
+  //           }
+  //         : card
+  //     );
+  //     // Обновляем selectedCard, если это она
+  //     if (selectedCard?.id === cardId) {
+  //       setSelectedCard(newCards.find((c) => c.id === cardId) || null);
+  //     }
+  //     return newCards;
+  //   });
+  // };
 
   const addText = (title: string, content: string) => {
     const newText: TextEntry = {
@@ -323,20 +409,34 @@ export default function App() {
     });
   };
 
-  const updateCard = (cardId: string, updates: Partial<FlashCard>) => {
-    setCards(
-      cards.map((card) => (card.id === cardId ? { ...card, ...updates } : card))
-    );
+  const updateCard = async (cardId: string, updates: Partial<FlashCard>) => {
+    try {
+      const result = await updateFlashcard(cardId, updates);
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === cardId ? { ...card, ...result.flashcard } : card
+        )
+      );
 
-    if (selectedCard?.id === cardId) {
-      setSelectedCard({ ...selectedCard, ...updates });
+      if (selectedCard?.id === cardId) {
+        setSelectedCard((prev) => prev && { ...prev, ...result.flashcard });
+      }
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const deleteCard = (cardId: string) => {
-    setCards(cards.filter((card) => card.id !== cardId));
+  // const deleteCard = (cardId: string) => {
+  //   setCards(cards.filter((card) => card.id !== cardId));
+  // };
+  const handleDelete = async (cardId: string) => {
+    try {
+      await deleteFlashcard(cardId);
+      setCards((prev) => prev.filter((c) => c.id !== cardId));
+    } catch (error) {
+      console.error(error);
+    }
   };
-
   const filteredCards = cards.filter(
     (card) => card.language === currentLanguage
   );
@@ -386,7 +486,7 @@ export default function App() {
             onUpdateKnowledge={updateKnowledgeLevel}
             onUpdateCard={updateCard}
             onBack={() => setCurrentScreen("main")}
-            onDelete={deleteCard}
+            onDelete={handleDelete}
           />
         )}
 
@@ -397,7 +497,7 @@ export default function App() {
               setSelectedCard(card);
               setCurrentScreen("card-detail");
             }}
-            onDeleteCard={deleteCard}
+            onDeleteCard={handleDelete}
           />
         )}
 

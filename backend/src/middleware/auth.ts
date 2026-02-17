@@ -14,13 +14,13 @@ export const checkAuth = async (
 
   const token = authHeader.split(" ")[1];
 
-  const { data: user, error } = await supabase.auth.getUser(token);
-
-  if (error || !user) {
+  //const { data: user, error } = await supabase.auth.getUser(token);
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) {
     return res.status(401).json({ error: "Invalid token" });
   }
 
-  // Можно положить пользователя в req
-  (req as any).user = user;
+  // Attach user to request object for downstream handlers
+  (req as any).user = data.user;
   next();
 };

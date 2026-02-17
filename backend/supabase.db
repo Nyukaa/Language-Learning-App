@@ -1,0 +1,95 @@
+//create tables
+create table texts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  title text not null,
+  content text not null,
+  created_at timestamp default now()
+);
+create table flashcards (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  word text not null,
+  translation text,
+  notes text,
+  created_at timestamp default now()
+);
+create table contexts (
+  id uuid primary key default gen_random_uuid(),
+  flashcard_id uuid references flashcards(id) on delete cascade,
+  text_id uuid references texts(id) on delete set null,
+  sentence text not null,
+  created_at timestamp default now()
+);
+create table learning_progress (
+  id uuid primary key default gen_random_uuid(),
+  flashcard_id uuid references flashcards(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+
+  level int default 0,               -- 0 = new, 1 = learning, 2 = known
+  repetitions int default 0,
+  last_reviewed timestamp,
+  next_review timestamp,
+
+  created_at timestamp default now()
+);
+//Enable Row Level Security
+alter table flashcards enable row level security;
+alter table texts enable row level security;
+alter table contexts enable row level security;
+alter table learning_progress enable row level security;
+
+//policy
+create policy "Users can manage their own texts"
+on texts
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+create policy "Users can manage their own flashcards"
+on flashcards
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "Users can manage their own contexts"
+on contexts
+for all
+using (
+  auth.uid() = (
+    select user_id
+    from flashcards
+    where flashcards.id = contexts.flashcard_id
+  )
+)
+with check (
+  auth.uid() = (
+    select user_id
+    from flashcards
+    where flashcards.id = contexts.flashcard_id
+  )
+);
+
+create policy "Users can manage their own progress"
+on learning_progress
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+//for deleting card
+alter table contexts
+drop constraint contexts_flashcard_id_fkey;
+
+alter table contexts
+add constraint contexts_flashcard_id_fkey
+foreign key (flashcard_id)
+references flashcards(id)
+on delete cascade;
+
+alter table learning_progress
+drop constraint learning_progress_flashcard_id_fkey;
+
+alter table learning_progress
+add constraint learning_progress_flashcard_id_fkey
+foreign key (flashcard_id)
+references flashcards(id)
+on delete cascade;
