@@ -116,3 +116,28 @@ export const updateFlashcardKnowledge = async (
   if (!res.ok) throw new Error("Failed to update knowledge");
   return res.json();
 };
+//how it send to backend
+export const addContextToFlashcard = async (
+  cardId: string,
+  sentence: string,
+  textId?: string
+) => {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session?.session?.access_token;
+  if (!token) throw new Error("No auth session");
+
+  const res = await fetch(
+    `http://localhost:4000/api/flashcards/${cardId}/contexts`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ sentence, textId }),
+    }
+  );
+
+  if (!res.ok) throw new Error("Failed to add context");
+  return res.json();
+};

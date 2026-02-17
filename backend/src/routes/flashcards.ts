@@ -86,7 +86,7 @@ router.delete("/:id", checkAuth, async (req, res) => {
     .from("flashcards")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id); // защита
+    .eq("user_id", user.id); //defend against deleting others' flashcards
 
   if (error) {
     return res.status(500).json({ error: error.message });
@@ -178,6 +178,48 @@ router.post("/:id/knowledge", checkAuth, async (req, res) => {
       if (error) throw error;
       res.json({ message: "Knowledge created", progress: data });
     }
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/flashcards/:id/contexts
+router.post("/:id/contexts", checkAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const flashcardId = req.params.id;
+    const { sentence, textId } = req.body;
+
+    if (!sentence) {
+      return res.status(400).json({ error: "Sentence required" });
+    }
+
+    // check flashcard belongs to user
+    const { data: flashcard, error: fcError } = await supabase
+      .from("flashcards")
+      .select()
+      .eq("id", flashcardId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fcError || !flashcard) {
+      return res.status(404).json({ error: "Flashcard not found" });
+    }
+
+    const { data, error } = await supabase
+      .from("contexts")
+      .insert({
+        flashcard_id: flashcardId,
+        text_id: textId || null,
+        sentence,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ message: "Context added", context: data });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: error.message });
