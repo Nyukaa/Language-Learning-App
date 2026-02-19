@@ -104,7 +104,7 @@ router.patch("/:id", checkAuth, async (req, res) => {
     const { word, lemma, translation, category } = req.body;
 
     const updates: any = {};
-
+    console.log("Updating flashcard", flashcardId, updates, "user:", user.id);
     if (word !== undefined) updates.word = word;
     if (lemma !== undefined) updates.lemma = lemma;
     if (translation !== undefined) updates.translation = translation;

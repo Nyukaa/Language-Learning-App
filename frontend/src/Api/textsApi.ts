@@ -1,3 +1,4 @@
+import axios from "axios";
 import { supabase } from "../../supabaseClient";
 
 export interface TextEntry {
@@ -10,15 +11,15 @@ export interface TextEntry {
 
 // Fetch all texts for the current user
 export const getTexts = async (): Promise<{ texts: TextEntry[] }> => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch("/api/texts", {
+  const res = await axios.get("/api/texts", {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Failed to fetch texts");
-  return res.json();
+
+  return res.data;
 };
 
 // Create a new text
@@ -27,53 +28,41 @@ export const createText = async (
   content: string,
   language: string
 ) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch("/api/texts", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ title, content, language }),
-  });
+  const res = await axios.post(
+    "/api/texts",
+    { title, content, language },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-  if (!res.ok) throw new Error("Failed to create text");
-  return res.json();
+  return res.data;
 };
 
 // Update a text by ID
 export const updateText = async (id: string, updates: Partial<TextEntry>) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`/api/texts/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(updates),
+  const res = await axios.put(`/api/texts/${id}`, updates, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Failed to update text");
-  return res.json();
+  return res.data;
 };
 
 // Delete a text by ID
 export const deleteText = async (id: string) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`/api/texts/${id}`, {
-    method: "DELETE",
+  const res = await axios.delete(`/api/texts/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Failed to delete text");
-  return res.json();
+  return res.data;
 };

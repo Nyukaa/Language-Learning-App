@@ -59,7 +59,7 @@ export function CardDetail({
 
     const context = card.contexts[editingContextIndex];
 
-    const updated = await updateContext(context.id, editedContext);
+    const updated = await updateContext(card.id, context.id, editedContext);
 
     onUpdateCard(card.id, {
       contexts: card.contexts.map((c) => (c.id === context.id ? updated : c)),
@@ -78,7 +78,7 @@ export function CardDetail({
 
     if (!confirm("Delete this context?")) return;
 
-    await deleteContext(context.id);
+    await deleteContext(card.id, context.id);
 
     onUpdateCard(card.id, {
       contexts: card.contexts.filter((c) => c.id !== context.id),

@@ -1,34 +1,53 @@
-export const createContext = async (flashcardId: string, sentence: string) => {
-  const res = await fetch("/api/contexts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ flashcard_id: flashcardId, sentence }),
-  });
+import axios from "axios";
+import { supabase } from "../../supabaseClient";
 
-  if (!res.ok) throw new Error("Failed to create context");
-  return res.json();
+// Create a new context for a flashcard
+export const createContext = async (
+  flashcardId: string,
+  sentence: string,
+  textId?: string
+) => {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session?.session?.access_token;
+  if (!token) throw new Error("No auth session");
+
+  const res = await axios.post(
+    `/api/flashcards/${flashcardId}/contexts`,
+    { flashcard_id: flashcardId, sentence, textId },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  return res.data;
 };
 
-export const updateContext = async (id: string, sentence: string) => {
-  const res = await fetch(`/api/contexts/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sentence }),
-  });
+// Update an existing context
+export const updateContext = async (
+  flashcardId: string,
+  id: string,
+  sentence: string
+) => {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session?.session?.access_token;
+  if (!token) throw new Error("No auth session");
 
-  if (!res.ok) throw new Error("Failed to update context");
-  return res.json();
+  const res = await axios.patch(
+    `/api/flashcards/${flashcardId}/contexts/${id}`,
+    { sentence },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  return res.data;
 };
 
-export const deleteContext = async (id: string) => {
-  console.log("Deleting context with id:", id);
-  const res = await fetch(`/api/contexts/${id}`, {
-    method: "DELETE",
+// Delete a context by ID
+export const deleteContext = async (flashcardId: string, id: string) => {
+  const { data: session } = await supabase.auth.getSession();
+  const token = session?.session?.access_token;
+  if (!token) throw new Error("No auth session");
+
+  const res = await axios.delete(`/api/flashcards/${flashcardId}/contexts`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error("Delete failed:", errText);
-    throw new Error("Failed to delete context");
-  }
+  return res.data;
 };

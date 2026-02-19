@@ -42,6 +42,7 @@ export function TextReader({
   };
 
   const handleAddWord = () => {
+    console.log("Adding word:", { selectedWord, editedLemma, selectedContext });
     if (editedLemma.trim() && selectedContext) {
       onAddWord(selectedWord, editedLemma.trim(), selectedContext);
       setShowAddWordPopup(false);

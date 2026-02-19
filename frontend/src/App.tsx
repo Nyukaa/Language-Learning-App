@@ -159,6 +159,7 @@ export default function App() {
   }, []);
 
   const addCard = async (word: string, context: string) => {
+    const lemma = word;
     try {
       const normalizedWord = normalize(word);
 
@@ -168,7 +169,7 @@ export default function App() {
       const newCard: FlashCard = {
         id: result.flashcard.id,
         word,
-        lemma: word,
+        lemma,
         wordForms: [normalizedWord],
         translation: result.flashcard.translation || "",
         category: "",
@@ -365,7 +366,7 @@ export default function App() {
           ...existingCard,
           contexts: [
             ...existingCard.contexts,
-            { id: created.id, sentence: created.sentence },
+            { id: created.context.id, sentence: created.context.sentence },
           ],
         };
 
@@ -379,7 +380,7 @@ export default function App() {
 
     // create new card on backend
     try {
-      const result = await createFlashcard(word, "", context, textId);
+      const result = await createFlashcard(word, lemma, "", context, textId);
 
       const newCard: FlashCard = {
         id: result.flashcard.id,

@@ -1,76 +1,53 @@
+import axios from "axios";
 import { supabase } from "../../supabaseClient";
+
 // Create a new flashcard for the logged-in user
 export const createFlashcard = async (
   word: string,
-  translation: string,
-  sentence: string,
+  lemma?: string,
+  translation?: string,
+  sentence?: string,
   textId?: string
 ) => {
   const { data } = await supabase.auth.getSession();
-
   const token = data.session?.access_token;
+  if (!token) throw new Error("No auth session");
 
-  if (!token) {
-    throw new Error("No auth session");
-  }
+  const res = await axios.post(
+    "/api/flashcards",
+    { word, translation, sentence, textId, lemma },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-  const response = await fetch("api/flashcards", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      word,
-      translation,
-      sentence,
-      textId,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create flashcard");
-  }
-
-  return response.json();
+  return res.data;
 };
 
 // Fetch flashcards for the logged-in user
 export const getFlashcards = async () => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
+  if (!token) throw new Error("No auth session");
 
-  const response = await fetch("/api/flashcards", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const res = await axios.get("/api/flashcards", {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch flashcards");
-  }
-
-  return response.json();
+  return res.data;
 };
 
 // Delete a flashcard by ID
 export const deleteFlashcard = async (id: string) => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
+  if (!token) throw new Error("No auth session");
 
-  const response = await fetch(`api/flashcards/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const res = await axios.delete(`/api/flashcards/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to delete flashcard");
-  }
-
-  return response.json();
+  return res.data;
 };
+
 // Update a flashcard by ID
 export const updateFlashcard = async (
   cardId: string,
@@ -81,62 +58,52 @@ export const updateFlashcard = async (
     category?: string;
   }
 ) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`api/flashcards/${cardId}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(updates),
+  const res = await axios.patch(`/api/flashcards/${cardId}`, updates, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Failed to update flashcard");
-  return res.json();
+  return res.data;
 };
+
 // Update flashcard knowledge level
 export const updateFlashcardKnowledge = async (
   cardId: string,
   level: 0 | 1 | 2
 ) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`api/flashcards/${cardId}/knowledge`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ level }),
-  });
+  const res = await axios.post(
+    `/api/flashcards/${cardId}/knowledge`,
+    { level },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-  if (!res.ok) throw new Error("Failed to update knowledge");
-  return res.json();
+  return res.data;
 };
-//how it send to backend
+
+//Add a context to a flashcard
 export const addContextToFlashcard = async (
   cardId: string,
   sentence: string,
+
   textId?: string
 ) => {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`api/flashcards/${cardId}/contexts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ sentence, textId }),
-  });
+  const res = await axios.post(
+    `/api/flashcards/${cardId}/contexts`,
+    { sentence, textId },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-  if (!res.ok) throw new Error("Failed to add context");
-  return res.json();
+  return res.data;
 };
