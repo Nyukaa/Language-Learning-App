@@ -21,9 +21,14 @@ export const updateContext = async (id: string, sentence: string) => {
 };
 
 export const deleteContext = async (id: string) => {
+  console.log("Deleting context with id:", id);
   const res = await fetch(`/api/contexts/${id}`, {
     method: "DELETE",
   });
 
-  if (!res.ok) throw new Error("Failed to delete context");
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Delete failed:", errText);
+    throw new Error("Failed to delete context");
+  }
 };

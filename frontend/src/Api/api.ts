@@ -14,7 +14,7 @@ export const createFlashcard = async (
     throw new Error("No auth session");
   }
 
-  const response = await fetch("http://localhost:4000/api/flashcards", {
+  const response = await fetch("api/flashcards", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,7 +40,7 @@ export const getFlashcards = async () => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
-  const response = await fetch("http://localhost:4000/api/flashcards", {
+  const response = await fetch("/api/flashcards", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -58,7 +58,7 @@ export const deleteFlashcard = async (id: string) => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
-  const response = await fetch(`http://localhost:4000/api/flashcards/${id}`, {
+  const response = await fetch(`api/flashcards/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -85,7 +85,7 @@ export const updateFlashcard = async (
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`http://localhost:4000/api/flashcards/${cardId}`, {
+  const res = await fetch(`api/flashcards/${cardId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -106,17 +106,14 @@ export const updateFlashcardKnowledge = async (
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(
-    `http://localhost:4000/api/flashcards/${cardId}/knowledge`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ level }),
-    }
-  );
+  const res = await fetch(`api/flashcards/${cardId}/knowledge`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ level }),
+  });
 
   if (!res.ok) throw new Error("Failed to update knowledge");
   return res.json();
@@ -131,17 +128,14 @@ export const addContextToFlashcard = async (
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(
-    `http://localhost:4000/api/flashcards/${cardId}/contexts`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ sentence, textId }),
-    }
-  );
+  const res = await fetch(`api/flashcards/${cardId}/contexts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ sentence, textId }),
+  });
 
   if (!res.ok) throw new Error("Failed to add context");
   return res.json();

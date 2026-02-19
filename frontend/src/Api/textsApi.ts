@@ -14,7 +14,7 @@ export const getTexts = async (): Promise<{ texts: TextEntry[] }> => {
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch("http://localhost:4000/api/texts", {
+  const res = await fetch("/api/texts", {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch texts");
@@ -31,7 +31,7 @@ export const createText = async (
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch("http://localhost:4000/api/texts", {
+  const res = await fetch("/api/texts", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export const updateText = async (id: string, updates: Partial<TextEntry>) => {
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`http://localhost:4000/api/texts/${id}`, {
+  const res = await fetch(`/api/texts/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export const deleteText = async (id: string) => {
   const token = session?.session?.access_token;
   if (!token) throw new Error("No auth session");
 
-  const res = await fetch(`http://localhost:4000/api/texts/${id}`, {
+  const res = await fetch(`/api/texts/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
