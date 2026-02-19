@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Trash2, Edit2, Check, X, Tag } from "lucide-react";
 import type { FlashCard } from "../App";
+import { updateFlashcard } from "../Api/api";
 import {
   createContext,
   updateContext,
@@ -84,11 +85,17 @@ export function CardDetail({
     });
   };
 
-  const handleSaveLemma = () => {
-    if (editedLemma.trim()) {
-      onUpdateCard(card.id, { lemma: editedLemma.trim() });
-      setIsEditingLemma(false);
-    }
+  const handleSaveLemma = async () => {
+    if (!editedLemma.trim()) return;
+
+    // Update backend
+    const updatedCard = await updateFlashcard(card.id, {
+      lemma: editedLemma.trim(),
+    });
+
+    // Update local UI
+    onUpdateCard(card.id, { lemma: updatedCard.lemma });
+    setIsEditingLemma(false);
   };
 
   const handleCancelLemmaEdit = () => {
@@ -297,7 +304,7 @@ export function CardDetail({
           )}
 
           <div className="space-y-3">
-            {card.contexts.map((context, index) => (
+            {card.contexts?.map((context, index) => (
               <div key={index} className="border-t border-gray-200 pt-3">
                 {editingContextIndex === index ? (
                   <div className="flex items-start gap-2">
@@ -339,7 +346,7 @@ export function CardDetail({
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      {card.contexts.length > 1 && (
+                      {card.contexts?.length > 1 && (
                         <button
                           onClick={() => handleDeleteContext(index)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -404,7 +411,7 @@ export function CardDetail({
             <div>
               <div className="font-medium mb-1">Contexts</div>
               <div className="text-2xl font-medium text-blue-600">
-                {card.contexts.length}
+                {card.contexts?.length}
               </div>
             </div>
             <div>

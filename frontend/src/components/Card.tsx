@@ -48,9 +48,9 @@ export function Card({ card, onClick, onUpdateKnowledge }: CardProps) {
             <p className="text-sm text-gray-500 mb-1">{card.translation}</p>
           )}
           <p className="text-sm text-gray-600 italic">
-            {card.contexts[0]?.sentence}
+            {card.contexts?.[0]?.sentence}
           </p>
-          {card.contexts.length > 1 && (
+          {card.contexts?.length > 1 && (
             <p className="text-xs text-blue-600 mt-1">
               +{card.contexts.length - 1}{" "}
               {card.contexts.length === 2 ? "context" : "contexts"}

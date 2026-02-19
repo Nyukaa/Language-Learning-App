@@ -74,7 +74,12 @@ export const deleteFlashcard = async (id: string) => {
 // Update a flashcard by ID
 export const updateFlashcard = async (
   cardId: string,
-  updates: { word?: string; translation?: string; category?: string }
+  updates: {
+    word?: string;
+    lemma?: string;
+    translation?: string;
+    category?: string;
+  }
 ) => {
   const { data: session } = await supabase.auth.getSession();
   const token = session?.session?.access_token;

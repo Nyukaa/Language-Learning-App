@@ -60,7 +60,7 @@ export default function App() {
   const [showAddTextModal, setShowAddTextModal] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   //const [vocabulary, setVocabulary] = useState<Set<string>>(new Set());
-  const normalize = (text: string) => text.trim().toLowerCase();
+  const normalize = (sentence: string) => sentence.trim().toLowerCase();
   // for logging in with Google OAuth using Supabase
   const login = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -172,7 +172,7 @@ export default function App() {
         wordForms: [normalizedWord],
         translation: result.flashcard.translation || "",
         category: "",
-        contexts: result.flashcard.contexts.map((c: any) => ({
+        contexts: result.flashcard.contexts?.map((c: any) => ({
           id: c.id,
           sentence: c.sentence,
         })),
@@ -349,7 +349,7 @@ export default function App() {
     });
 
     if (existingCard) {
-      const contextExists = existingCard.contexts.some(
+      const contextExists = existingCard.contexts?.some(
         (c) => normalize(c.sentence) === normalizedContext
       );
 
@@ -388,7 +388,7 @@ export default function App() {
         wordForms: [normalizedWord],
         translation: result.flashcard.translation || "",
         category: "",
-        contexts: result.flashcard.contexts.map((c: any) => ({
+        contexts: result.flashcard.contexts?.map((c: any) => ({
           id: c.id,
           sentence: c.sentence,
         })),
