@@ -42,12 +42,12 @@ export interface TextEntry {
   createdAt: Date;
 }
 
-export type Language = "ru" | "fi" | "en";
+export type Language = "fi" | "en";
 export type Screen = "main" | "card-detail" | "dictionary" | "progress";
 export type MainView = "cards" | "text";
 
 export default function App() {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>("ru");
+  const [currentLanguage, setCurrentLanguage] = useState<Language>("en");
   const [currentScreen, setCurrentScreen] = useState<Screen>("main");
   const [mainView, setMainView] = useState<MainView>("cards");
   const [cards, setCards] = useState<FlashCard[]>([]);
@@ -55,6 +55,7 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null);
   const [showAddCardModal, setShowAddCardModal] = useState(false);
   const [showAddTextModal, setShowAddTextModal] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   //const [vocabulary, setVocabulary] = useState<Set<string>>(new Set());
   const normalize = (text: string) => text.trim().toLowerCase();
   // for logging in with Google OAuth using Supabase
@@ -66,93 +67,34 @@ export default function App() {
       console.error("Login error:", error.message);
     }
   };
-  // After login , get the access token and send it to the backend
-  // useEffect(() => {
-  //   const handleAuth = async () => {
-  //     // 1️⃣ Обрабатываем OAuth redirect
-  //     const { data, error } = await supabase.auth.exchangeCodeForSession(
-  //       window.location.href
-  //     );
-
-  //     if (error) {
-  //       console.error("Exchange error:", error.message);
-  //     }
-
-  //     // 2️⃣ Получаем session
-  //     const { data: sessionData } = await supabase.auth.getSession();
-
-  //     if (!sessionData.session) return;
-
-  //     const token = sessionData.session.access_token;
-
-  //     console.log("Token:", token);
-
-  //     // 3️⃣ Отправляем в backend
-  //     await fetch("http://localhost:4000/api/protected", {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //   };
-
-  //   handleAuth();
-  // }, []);
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
   useEffect(() => {
-    const checkSession = async () => {
+    const getSession = async () => {
       const { data, error } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        setUserEmail(data.session.user.email ?? null);
+      }
 
       if (error) {
         console.error(error);
         return;
       }
-      console.log("TOKEN:", data.session?.access_token);
-      if (data.session) {
-        const token = data.session.access_token;
-
-        await fetch("http://localhost:4000/api/protected", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
     };
+    //console.log("TOKEN:", data.session?.access_token);
+    getSession();
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUserEmail(session?.user?.email ?? null);
+      }
+    );
 
-    checkSession();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Load data from localStorage
-  // useEffect(() => {
-  //   const savedCards = localStorage.getItem("languageCards");
-  //   const savedTexts = localStorage.getItem("languageTexts");
-
-  //   if (savedCards) {
-  //     const parsedCards = JSON.parse(savedCards);
-
-  //     setCards(
-  //       parsedCards.map((card: any) => ({
-  //         ...card,
-  //         wordForms: card.wordForms || [card.word?.toLowerCase?.() || ""], // миграция
-  //         contexts: card.contexts || [card.context],
-  //         lemma: card.lemma || card.word,
-  //         translation: card.translation || "",
-  //         category: card.category || "",
-  //         lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : null,
-  //         createdAt: new Date(card.createdAt),
-  //       }))
-  //     );
-  //   }
-
-  //   if (savedTexts) {
-  //     const parsedTexts = JSON.parse(savedTexts);
-  //     setTexts(
-  //       parsedTexts.map((text: any) => ({
-  //         ...text,
-  //         createdAt: new Date(text.createdAt),
-  //       }))
-  //     );
-  //   }
-  // }, []);
-  // Load texts from backend on mount
   useEffect(() => {
     const loadTexts = async () => {
       try {
@@ -213,7 +155,6 @@ export default function App() {
     loadFlashcards();
   }, []);
 
-  // Save data to localStorage
   // useEffect(() => {
   //   localStorage.setItem("languageCards", JSON.stringify(cards));
   // }, [cards]);
@@ -296,7 +237,6 @@ export default function App() {
     }
   };
 
-  //   const existingCard = cards.find(
   //     (card) =>
   //       card.lemma.toLowerCase() === lemma.toLowerCase() &&
   //       card.language === currentLanguage
@@ -553,6 +493,8 @@ export default function App() {
         onAddText={() => setShowAddTextModal(true)}
         showAddButtons={currentScreen === "main"}
         onLogin={login}
+        onLogout={logout}
+        userEmail={userEmail}
       />
 
       <main className="flex-1 pb-20">
