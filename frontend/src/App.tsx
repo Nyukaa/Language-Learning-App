@@ -16,9 +16,9 @@ import {
   deleteFlashcard,
   updateFlashcardKnowledge,
   addContextToFlashcard,
-} from "./api";
+} from "./Api/api";
 
-import { getTexts, createText, updateText, deleteText } from "./textsApi";
+import { getTexts, createText, updateText, deleteText } from "./Api/textsApi";
 export interface FlashCard {
   id: string;
   word: string;
@@ -26,7 +26,10 @@ export interface FlashCard {
   wordForms: string[]; //all forms of the word (for better search and recognition)
   translation: string;
   category: string;
-  contexts: string[];
+  contexts: {
+    id: string;
+    sentence: string;
+  }[];
   language: string;
   knowledgeLevel: 0 | 1 | 2; // 0: Don't know, 1: Almost, 2: Know
   repetitions: number;
@@ -134,11 +137,11 @@ export default function App() {
         const formatted = result.flashcards.map((card: any) => ({
           id: card.id,
           word: card.word,
-          lemma: card.word,
+          lemma: card.lemma || card.word,
           wordForms: [card.word.toLowerCase()],
           translation: card.translation,
-          category: "",
-          contexts: card.contexts.map((c: any) => c.sentence),
+          category: card.category || "",
+          contexts: card.contexts,
           language: "en",
           knowledgeLevel: card.learning_progress?.[0]?.level ?? 0,
           repetitions: card.learning_progress?.[0]?.repetitions ?? 0,
@@ -155,39 +158,11 @@ export default function App() {
     loadFlashcards();
   }, []);
 
-  // useEffect(() => {
-  //   localStorage.setItem("languageCards", JSON.stringify(cards));
-  // }, [cards]);
-
-  // useEffect(() => {
-  //   localStorage.setItem("languageTexts", JSON.stringify(texts));
-  // }, [texts]);
-
-  // const addCard = (word: string, context: string) => {
-  //   const normalizedWord = normalize(word);
-
-  //   const newCard: FlashCard = {
-  //     id: Date.now().toString(),
-  //     word,
-  //     lemma: word,
-  //     wordForms: [normalizedWord],
-  //     translation: "",
-  //     category: "",
-  //     contexts: [context],
-  //     language: currentLanguage,
-  //     knowledgeLevel: 0,
-  //     repetitions: 0,
-  //     lastReviewed: null,
-  //     createdAt: new Date(),
-  //   };
-
-  //   setCards((prev) => [newCard, ...prev]);
-  // };
   const addCard = async (word: string, context: string) => {
     try {
       const normalizedWord = normalize(word);
 
-      // calling backend to create flashcard and context in the database
+      // create flashcard on backend
       const result = await createFlashcard(word, "", context);
 
       const newCard: FlashCard = {
@@ -197,7 +172,10 @@ export default function App() {
         wordForms: [normalizedWord],
         translation: result.flashcard.translation || "",
         category: "",
-        contexts: [context],
+        contexts: result.flashcard.contexts.map((c: any) => ({
+          id: c.id,
+          sentence: c.sentence,
+        })),
         language: currentLanguage,
         knowledgeLevel: 0,
         repetitions: 0,
@@ -237,9 +215,6 @@ export default function App() {
     }
   };
 
-  //     (card) =>
-  //       card.lemma.toLowerCase() === lemma.toLowerCase() &&
-  //       card.language === currentLanguage
   //   );
 
   //   if (existingCard) {
@@ -363,7 +338,7 @@ export default function App() {
     const normalizedLemma = normalize(lemma);
     const normalizedContext = normalize(context);
 
-    // find existing card first
+    // check if card exists
     const existingCard = cards.find((card) => {
       if (card.language !== currentLanguage) return false;
       const cardForms = card.wordForms.map(normalize);
@@ -374,74 +349,59 @@ export default function App() {
     });
 
     if (existingCard) {
-      // check if we need to add word form or context
-      const wordExists = existingCard.wordForms
-        .map(normalize)
-        .includes(normalizedWord);
-      const contextExists = existingCard.contexts
-        .map(normalize)
-        .includes(normalizedContext);
+      const contextExists = existingCard.contexts.some(
+        (c) => normalize(c.sentence) === normalizedContext
+      );
 
-      if (!wordExists || !contextExists) {
+      if (!contextExists) {
+        // add context on backend
+        const created = await addContextToFlashcard(
+          existingCard.id,
+          context,
+          textId
+        );
+
         const updatedCard: FlashCard = {
           ...existingCard,
-          wordForms: wordExists
-            ? existingCard.wordForms
-            : [...existingCard.wordForms, normalizedWord],
-          contexts: contextExists
-            ? existingCard.contexts
-            : [...existingCard.contexts, context],
+          contexts: [
+            ...existingCard.contexts,
+            { id: created.id, sentence: created.sentence },
+          ],
         };
 
         setCards((prev) =>
           prev.map((c) => (c.id === existingCard.id ? updatedCard : c))
         );
-
-        // sync with backend
-        if (existingCard.id) {
-          await addContextToFlashcard(existingCard.id, context, textId);
-        }
       }
-      return; // already handled existing card
+
+      return; // nothing more to do
     }
 
-    // create new card locally
-    const newCard: FlashCard = {
-      id: "", // will be set after server
-      word,
-      lemma,
-      wordForms: [normalizedWord],
-      translation: "",
-      category: "",
-      contexts: [context],
-      language: currentLanguage,
-      knowledgeLevel: 0,
-      repetitions: 0,
-      lastReviewed: null,
-      createdAt: new Date(),
-    };
-
-    setCards((prev) => [newCard, ...prev]);
-
-    // create on backend
+    // create new card on backend
     try {
       const result = await createFlashcard(word, "", context, textId);
 
-      // update card with real id and translation
-      setCards((prev) =>
-        prev.map((c) =>
-          c === newCard
-            ? {
-                ...c,
-                id: result.flashcard.id,
-                translation: result.flashcard.translation || "",
-                createdAt: new Date(result.flashcard.created_at),
-              }
-            : c
-        )
-      );
+      const newCard: FlashCard = {
+        id: result.flashcard.id,
+        word,
+        lemma,
+        wordForms: [normalizedWord],
+        translation: result.flashcard.translation || "",
+        category: "",
+        contexts: result.flashcard.contexts.map((c: any) => ({
+          id: c.id,
+          sentence: c.sentence,
+        })),
+        language: currentLanguage,
+        knowledgeLevel: 0,
+        repetitions: 0,
+        lastReviewed: null,
+        createdAt: new Date(result.flashcard.created_at),
+      };
+
+      setCards((prev) => [newCard, ...prev]);
     } catch (err) {
-      console.error("Error syncing with backend:", err);
+      console.error("Error creating card from text:", err);
     }
   };
 

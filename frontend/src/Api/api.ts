@@ -1,4 +1,4 @@
-import { supabase } from "../supabaseClient";
+import { supabase } from "../../supabaseClient";
 // Create a new flashcard for the logged-in user
 export const createFlashcard = async (
   word: string,

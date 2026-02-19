@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { ArrowLeft, Trash2, Edit2, Check, X, Tag } from "lucide-react";
 import type { FlashCard } from "../App";
-
+import {
+  createContext,
+  updateContext,
+  deleteContext,
+} from "../Api/contextsApi";
 interface CardDetailProps {
   card: FlashCard;
   onUpdateKnowledge: (cardId: string, level: 0 | 1 | 2) => void;
@@ -38,6 +42,47 @@ export function CardDetail({
       onBack();
     }
   };
+  const handleAddContext = async () => {
+    if (!editedContext.trim()) return;
+
+    const created = await createContext(card.id, editedContext);
+
+    onUpdateCard(card.id, {
+      contexts: [...card.contexts, created],
+    });
+
+    setEditedContext("");
+  };
+  const handleSaveContext = async () => {
+    if (editingContextIndex === null) return;
+
+    const context = card.contexts[editingContextIndex];
+
+    const updated = await updateContext(context.id, editedContext);
+
+    onUpdateCard(card.id, {
+      contexts: card.contexts.map((c) => (c.id === context.id ? updated : c)),
+    });
+
+    setEditingContextIndex(null);
+    setEditedContext("");
+  };
+  const handleDeleteContext = async (index: number) => {
+    const context = card.contexts[index];
+
+    if (card.contexts.length === 1) {
+      alert("Cannot delete the only context");
+      return;
+    }
+
+    if (!confirm("Delete this context?")) return;
+
+    await deleteContext(context.id);
+
+    onUpdateCard(card.id, {
+      contexts: card.contexts.filter((c) => c.id !== context.id),
+    });
+  };
 
   const handleSaveLemma = () => {
     if (editedLemma.trim()) {
@@ -73,35 +118,12 @@ export function CardDetail({
 
   const handleStartEditContext = (index: number) => {
     setEditingContextIndex(index);
-    setEditedContext(card.contexts[index]);
-  };
-
-  const handleSaveContext = () => {
-    if (editedContext.trim() && editingContextIndex !== null) {
-      const newContexts = [...card.contexts];
-      newContexts[editingContextIndex] = editedContext.trim();
-      onUpdateCard(card.id, { contexts: newContexts });
-      setEditingContextIndex(null);
-      setEditedContext("");
-    }
+    setEditedContext(card.contexts[index].sentence);
   };
 
   const handleCancelContextEdit = () => {
     setEditingContextIndex(null);
     setEditedContext("");
-  };
-
-  const handleDeleteContext = (index: number) => {
-    if (card.contexts.length === 1) {
-      alert(
-        "Cannot delete the only context. Please add another context before deleting this one."
-      );
-      return;
-    }
-    if (confirm("Delete this context?")) {
-      const newContexts = card.contexts.filter((_, i) => i !== index);
-      onUpdateCard(card.id, { contexts: newContexts });
-    }
   };
 
   return (
@@ -112,7 +134,7 @@ export function CardDetail({
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5" />
-          Назад
+          Back
         </button>
 
         <button
@@ -308,7 +330,7 @@ export function CardDetail({
                 ) : (
                   <div className="flex items-start justify-between gap-3 group">
                     <p className="flex-1 text-lg text-gray-600 italic">
-                      "{context}"
+                      "{context.sentence}"
                     </p>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -374,7 +396,7 @@ export function CardDetail({
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
-              <div className="font-medium mb-1">Reviews</div>
+              <div className="font-medium mb-1">Last reviews</div>
               <div className="text-2xl font-medium text-gray-900">
                 {card.repetitions}
               </div>

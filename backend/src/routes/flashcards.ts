@@ -40,7 +40,9 @@ router.post("/", checkAuth, async (req, res) => {
       .insert({
         user_id: user.id,
         word,
+        lemma: word,
         translation,
+        category: "",
       })
       .select()
       .single();
@@ -99,13 +101,16 @@ router.patch("/:id", checkAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const flashcardId = req.params.id;
-    const { word, translation, category } = req.body;
+    const { word, lemma, translation, category } = req.body;
 
-    // update only provided fields
     const updates: any = {};
+
     if (word !== undefined) updates.word = word;
+    if (lemma !== undefined) updates.lemma = lemma;
     if (translation !== undefined) updates.translation = translation;
     if (category !== undefined) updates.category = category;
+
+    // update only provided fields
 
     const { data: flashcard, error } = await supabase
       .from("flashcards")

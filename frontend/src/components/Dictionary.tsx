@@ -28,10 +28,12 @@ export function Dictionary({
     // filter by search query
     const matchesSearch =
       card.lemma.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.translation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      card.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (card.translation &&
+        card.translation.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (card.category &&
+        card.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
       card.contexts.some((ctx) =>
-        ctx.toLowerCase().includes(searchQuery.toLowerCase())
+        ctx.sentence.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
     // filter by selected category
@@ -166,7 +168,7 @@ export function Dictionary({
                   </p>
                 )}
                 <p className="text-sm text-gray-600 italic mb-2">
-                  {card.contexts[0]}
+                  {card.contexts[0]?.sentence}
                 </p>
                 {card.contexts.length > 1 && (
                   <p className="text-xs text-blue-600 mb-2">
