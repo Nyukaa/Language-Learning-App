@@ -50,31 +50,27 @@ export function Header({
               </option>
             ))}
           </select>
-          <div className="flex gap-2">
-            {showAddButtons && (
-              <>
-                {userEmail ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-700">{userEmail}</span>
-                    <button
-                      onClick={onLogout}
-                      className="text-gray-500 text-sm hover:text-gray-600 border border-blue-500 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={onLogin}
-                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Sign in with Google
-                  </button>
-                )}
-              </>
+          <div className="flex gap-2">{showAddButtons && <></>}</div>
+          <div>
+            {userEmail ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">{userEmail}</span>
+                <button
+                  onClick={onLogout}
+                  className="text-gray-500 text-sm hover:text-gray-600 border border-blue-500 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onLogin}
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Sign in with Google
+              </button>
             )}
           </div>
-
           <div className="text-sm text-gray-600 capitalize">{dateStr}</div>
         </div>
 
