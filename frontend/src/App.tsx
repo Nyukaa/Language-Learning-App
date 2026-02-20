@@ -160,11 +160,12 @@ export default function App() {
 
   const addCard = async (word: string, context: string) => {
     const lemma = word;
+    const language = currentLanguage;
     try {
       const normalizedWord = normalize(word);
 
       // create flashcard on backend
-      const result = await createFlashcard(word, "", context);
+      const result = await createFlashcard(word, "", "", context, "", language);
 
       const newCard: FlashCard = {
         id: result.flashcard.id,
