@@ -6,8 +6,9 @@ const router = express.Router();
 
 router.get("/", checkAuth, async (req, res) => {
   const user = (req as any).user;
+  const { language } = req.query;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("flashcards")
     .select(
       `
@@ -19,6 +20,12 @@ router.get("/", checkAuth, async (req, res) => {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
+  if (language) {
+    query = query.eq("language", language);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -28,7 +35,7 @@ router.get("/", checkAuth, async (req, res) => {
 router.post("/", checkAuth, async (req, res) => {
   try {
     const user = (req as any).user;
-    const { word, translation, sentence, textId, lemma } = req.body;
+    const { word, translation, sentence, textId, lemma, language } = req.body;
 
     if (!word || !sentence) {
       return res.status(400).json({ error: "Word and sentence required" });
@@ -43,6 +50,7 @@ router.post("/", checkAuth, async (req, res) => {
         lemma: lemma || word,
         translation,
         category: "",
+        language: language || "en",
       })
       .select()
       .single();

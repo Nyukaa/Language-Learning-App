@@ -132,7 +132,7 @@ export default function App() {
   useEffect(() => {
     const loadFlashcards = async () => {
       try {
-        const result = await getFlashcards();
+        const result = await getFlashcards(currentLanguage);
 
         const formatted = result.flashcards.map((card: any) => ({
           id: card.id,
@@ -142,7 +142,7 @@ export default function App() {
           translation: card.translation,
           category: card.category || "",
           contexts: card.contexts,
-          language: "en",
+          language: card.language,
           knowledgeLevel: card.learning_progress?.[0]?.level ?? 0,
           repetitions: card.learning_progress?.[0]?.repetitions ?? 0,
           lastReviewed: card.learning_progress?.[0]?.last_reviewed ?? null,
@@ -156,7 +156,7 @@ export default function App() {
     };
 
     loadFlashcards();
-  }, []);
+  }, [currentLanguage]);
 
   const addCard = async (word: string, context: string) => {
     const lemma = word;
@@ -380,7 +380,14 @@ export default function App() {
 
     // create new card on backend
     try {
-      const result = await createFlashcard(word, lemma, "", context, textId);
+      const result = await createFlashcard(
+        word,
+        lemma,
+        "",
+        context,
+        textId,
+        currentLanguage
+      );
 
       const newCard: FlashCard = {
         id: result.flashcard.id,

@@ -16,6 +16,9 @@ create table flashcards (
   notes text,
   created_at timestamp default now()
 );
+alter table flashcards
+add column language text not null default 'en';
+
 alter table flashcards add column lemma text not null default '';
 alter table flashcards
 add column category text;

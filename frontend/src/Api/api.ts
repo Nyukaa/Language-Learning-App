@@ -7,7 +7,8 @@ export const createFlashcard = async (
   lemma?: string,
   translation?: string,
   sentence?: string,
-  textId?: string
+  textId?: string,
+  language?: string
 ) => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -15,7 +16,7 @@ export const createFlashcard = async (
 
   const res = await axios.post(
     "/api/flashcards",
-    { word, translation, sentence, textId, lemma },
+    { word, translation, sentence, textId, lemma, language },
     { headers: { Authorization: `Bearer ${token}` } }
   );
 
@@ -23,12 +24,13 @@ export const createFlashcard = async (
 };
 
 // Fetch flashcards for the logged-in user
-export const getFlashcards = async () => {
+export const getFlashcards = async (language: string) => {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("No auth session");
 
   const res = await axios.get("/api/flashcards", {
+    params: { language },
     headers: { Authorization: `Bearer ${token}` },
   });
 
