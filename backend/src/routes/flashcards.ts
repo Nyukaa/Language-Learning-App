@@ -28,7 +28,7 @@ router.get("/", checkAuth, async (req, res) => {
 router.post("/", checkAuth, async (req, res) => {
   try {
     const user = (req as any).user;
-    const { word, translation, sentence, textId } = req.body;
+    const { word, translation, sentence, textId, lemma } = req.body;
 
     if (!word || !sentence) {
       return res.status(400).json({ error: "Word and sentence required" });
@@ -40,7 +40,7 @@ router.post("/", checkAuth, async (req, res) => {
       .insert({
         user_id: user.id,
         word,
-        lemma: word,
+        lemma: lemma || word,
         translation,
         category: "",
       })
@@ -49,12 +49,16 @@ router.post("/", checkAuth, async (req, res) => {
 
     if (flashcardError) throw flashcardError;
 
-    // Create context
-    const { error: contextError } = await supabase.from("contexts").insert({
-      flashcard_id: flashcard.id,
-      text_id: textId || null,
-      sentence,
-    });
+    // Create context and return with flashcard
+    const { data: context, error: contextError } = await supabase
+      .from("contexts")
+      .insert({
+        flashcard_id: flashcard.id,
+        text_id: textId || null,
+        sentence,
+      })
+      .select()
+      .single();
 
     if (contextError) throw contextError;
 
@@ -66,14 +70,18 @@ router.post("/", checkAuth, async (req, res) => {
         user_id: user.id,
         level: 0,
         repetitions: 0,
-        next_review: new Date(), // Set next review to now for new flashcards
+        next_review: new Date(),
       });
 
     if (progressError) throw progressError;
 
+    // return flashcard + contexts
     res.status(201).json({
       message: "Flashcard created successfully",
-      flashcard,
+      flashcard: {
+        ...flashcard,
+        contexts: [context],
+      },
     });
   } catch (error: any) {
     console.error(error);
@@ -104,6 +112,7 @@ router.patch("/:id", checkAuth, async (req, res) => {
     const { word, lemma, translation, category } = req.body;
 
     const updates: any = {};
+    console.log("PATCH payload:", updates);
     console.log("Updating flashcard", flashcardId, updates, "user:", user.id);
     if (word !== undefined) updates.word = word;
     if (lemma !== undefined) updates.lemma = lemma;

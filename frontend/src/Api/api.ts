@@ -58,10 +58,16 @@ export const updateFlashcard = async (
     category?: string;
   }
 ) => {
-  
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("No auth session");
+
+  console.log("PATCH payload:", updates);
+
+  // если updates пустой — не отправляем
+  if (Object.keys(updates).length === 0) {
+    throw new Error("No fields to update");
+  }
 
   const res = await axios.patch(`/api/flashcards/${cardId}`, updates, {
     headers: { Authorization: `Bearer ${token}` },

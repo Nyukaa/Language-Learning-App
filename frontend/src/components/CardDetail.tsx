@@ -87,7 +87,7 @@ export function CardDetail({
 
   const handleSaveLemma = async () => {
     if (!editedLemma.trim()) return;
-
+    console.log("Sending lemma update:", editedLemma);
     // Update backend
     const updatedCard = await updateFlashcard(card.id, {
       lemma: editedLemma.trim(),
