@@ -1,9 +1,9 @@
 # 📘 Language Learning App — Smart Anki
 
-A lightweight single-page app for learning vocabulary from real texts.  
+A lightweight app for learning vocabulary from real texts.  
 Select a word → add a flashcard with context → track learning progress.
 
-Built with **React + Vite**, focused on fast UX and clean state management.
+Built with **React + Vite** and **Supabase**, focused on fast UX and clean state management.
 
 ---
 
@@ -15,71 +15,60 @@ Built with **React + Vite**, focused on fast UX and clean state management.
 - 3-level knowledge rating
 - Visual progress (charts & colors)
 - Edit & manage cards and contexts
-- Local-first (no backend required)
+- Google OAuth for user authentication
+- Backend sync with Supabase (Postgres)
 
 ---
 
 ## 🛠 Tech Stack
 
-- ⚛️ React + Vite
-- 🎨 Tailwind CSS
-- 📊 Recharts
-- 🧩 lucide-react
-- 🟦 TypeScript (partial)
+- **Frontend**: React, Vite, Tailwind CSS, TypeScript
+- **Backend**: Express, Supabase (Postgres), TypeScript
+- **Other**: Recharts, lucide-react, Axios
 
 ---
 
-## 🧠 Architecture (High Level)
+## 🧠 Architecture Overview
 
-- **App.tsx** — global state & `localStorage` sync
-- **TextReader** — word selection & add popup
-- **Dictionary / Cards** — flashcard management
-- **Progress** — learning statistics & charts
+### Frontend
 
-Client-side data migration for backward compatibility.
+- **App.tsx**: Manages global state, user session, and API calls
+- **TextReader**: Word selection, context extraction, and vocabulary highlighting
+- **Dictionary / Cards**: Flashcard management and inline editing
+- **Progress**: Learning statistics and spaced repetition tracking
 
----
+### Backend
 
-## 📚 What This Project Shows
-
-- Strong UX focus & learning-flow design
-- Complex state handling in React
-- Inline editing & dynamic forms
-- Text selection & popup positioning
-- Data persistence without backend
-- Clean, scalable component structure
-
----
-
-## 🚀 Possible Next Steps
-
-- i18n (full UI translation)
-- Backend sync / auth
-- Spaced repetition algorithm
-- Accessibility improvements
-- Mobile UX polish
-
----
-
-## 🔧 Backend (short overview)
-
-- Stack: Express + TypeScript + Supabase (Postgres)
-- Auth: Google OAuth via Supabase; backend validates JWT with middleware (`checkAuth`)
-- Routes:
-  - `GET /api/protected` — check token
-  - `GET/POST/PUT/DELETE /api/texts` — user texts (title/content/language)
-  - `GET/POST/DELETE/PATCH /api/flashcards` — create/update/delete cards
+- **Stack**: Express + Supabase (Postgres)
+- **Auth**: Google OAuth via Supabase; backend validates JWT with middleware (`checkAuth`)
+- **Routes**:
+  - `GET /api/protected` — validate token
+  - `GET/POST/PUT/DELETE /api/texts` — manage user texts
+  - `GET/POST/DELETE/PATCH /api/flashcards` — manage flashcards
   - `POST /api/flashcards/:id/knowledge` — update learning level
-  - `POST /api/flashcards/:id/contexts` — add context to card
-- Data model (Supabase tables):
+  - `POST /api/flashcards/:id/contexts` — add context to flashcard
+- **Data Model**:
   - `flashcards` (user_id, word, translation, created_at)
   - `contexts` (flashcard_id, text_id, sentence)
-  - `learning_progress` (flashcard_id, user_id, level, repetitions, last_reviewed, next_review)
+  - `learning_progress` (flashcard_id, user_id, level, repetitions, next_review)
   - `texts` (user_id, title, content, language, created_at)
-- Env:
-  - Frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
-  - Backend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
-- Notes:
-  - Backend enforces user ownership on mutations
-  - Frontend sends `Authorization: Bearer <token>` from Supabase session
-  - Service role key used server-side for DB operations
+
+---
+
+## 📚 What This Project Demonstrates
+
+- Seamless integration of frontend and backend
+- Strong UX focus with dynamic forms and inline editing
+- Google OAuth for secure authentication
+- Scalable architecture with Supabase for data persistence
+- Clean and modular React component structure
+
+---
+
+## 🚀 Future Enhancements
+
+- Full i18n support (UI translation)
+- Advanced spaced repetition algorithm
+- Accessibility improvements
+- Mobile-first design optimizations
+- Enhanced analytics and progress tracking
