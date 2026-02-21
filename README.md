@@ -48,10 +48,38 @@ Built with **React + Vite** and **Supabase**, focused on fast UX and clean state
   - `POST /api/flashcards/:id/knowledge` — update learning level
   - `POST /api/flashcards/:id/contexts` — add context to flashcard
 - **Data Model**:
-  - `flashcards` (user_id, word, translation, created_at)
-  - `contexts` (flashcard_id, text_id, sentence)
-  - `learning_progress` (flashcard_id, user_id, level, repetitions, next_review)
-  - `texts` (user_id, title, content, language, created_at)
+  - `texts`:
+    - `id` (UUID, primary key)
+    - `user_id` (UUID, references `auth.users`)
+    - `title` (text, not null)
+    - `content` (text, not null)
+    - `language` (text, default 'en')
+    - `created_at` (timestamp, default now)
+  - `flashcards`:
+    - `id` (UUID, primary key)
+    - `user_id` (UUID, references `auth.users`)
+    - `word` (text, not null)
+    - `translation` (text)
+    - `notes` (text)
+    - `lemma` (text, default '')
+    - `category` (text)
+    - `language` (text, default 'en')
+    - `created_at` (timestamp, default now)
+  - `contexts`:
+    - `id` (UUID, primary key)
+    - `flashcard_id` (UUID, references `flashcards`)
+    - `text_id` (UUID, references `texts`, nullable)
+    - `sentence` (text, not null)
+    - `created_at` (timestamp, default now)
+  - `learning_progress`:
+    - `id` (UUID, primary key)
+    - `flashcard_id` (UUID, references `flashcards`)
+    - `user_id` (UUID, references `auth.users`)
+    - `level` (int, default 0) — 0 = new, 1 = learning, 2 = known
+    - `repetitions` (int, default 0)
+    - `last_reviewed` (timestamp)
+    - `next_review` (timestamp)
+    - `created_at` (timestamp, default now)
 
 ---
 
