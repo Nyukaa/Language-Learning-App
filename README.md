@@ -28,6 +28,14 @@ Built with **React + Vite** and **Supabase**, focused on fast UX and clean state
 
 ---
 
+## 📸 Screenshots / App Preview
+
+| Main (Cards List)                                                            | Add New Word (From Text)                                                           | Dictionary                                                                  | Progress                                                                    |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| <img src="./screenshots/main.png" alt="Main - Flashcards List" width="150"/> | <img src="./screenshots/addNewWord.png" alt="Add New Word From Text" width="150"/> | <img src="./screenshots/dictionary.png" alt="Dictionary View" width="150"/> | <img src="./screenshots/progress.png" alt="Learning Progress" width="150"/> |
+
+---
+
 ## 🧠 Architecture Overview
 
 ### Frontend
