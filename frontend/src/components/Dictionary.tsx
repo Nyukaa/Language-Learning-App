@@ -46,9 +46,9 @@ export function Dictionary({
   const sortedCards = [...filteredCards].sort((a, b) => {
     switch (sortBy) {
       case "frequency":
-        return a.repetitions - b.repetitions; // По возрастанию: меньше повторений сначала
+        return a.repetitions - b.repetitions; // less repetitions first
       case "knowledge":
-        return a.knowledgeLevel - b.knowledgeLevel; // По возрастанию: хуже знание сначала
+        return a.knowledgeLevel - b.knowledgeLevel; // lower knowledge level first
       case "date":
         return (
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -59,9 +59,9 @@ export function Dictionary({
   });
 
   const knowledgeLevelColors = {
-    0: "bg-gray-100 border-gray-300 text-gray-700",
-    1: "bg-yellow-100 border-yellow-300 text-yellow-800",
-    2: "bg-green-100 border-green-300 text-green-800",
+    0: "border-gray-300 text-gray-700",
+    1: "border-yellow-300 text-yellow-800",
+    2: "border-green-300 text-green-800",
   };
 
   const handleDelete = (cardId: string, e: React.MouseEvent) => {
