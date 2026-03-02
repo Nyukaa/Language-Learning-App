@@ -174,7 +174,7 @@ router.post("/:id/knowledge", checkAuth, async (req, res) => {
           level,
           repetitions: existing.repetitions + 1,
           last_reviewed: new Date(),
-          next_review: new Date(Date.now() + 24 * 60 * 60 * 1000), // следующий день, можно менять алгоритм
+          next_review: new Date(Date.now() + 24 * 60 * 60 * 1000), // for simplicity, next review is always 24h later - in a real app this would depend on the level and other factors
         })
         .eq("id", existing.id)
         .select()
