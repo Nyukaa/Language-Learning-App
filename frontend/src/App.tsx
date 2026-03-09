@@ -527,6 +527,7 @@ export default function App() {
         <AddCardModal
           onAdd={addCard}
           onClose={() => setShowAddCardModal(false)}
+          currentLanguage={currentLanguage}
         />
       )}
 

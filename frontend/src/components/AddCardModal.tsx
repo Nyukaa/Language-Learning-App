@@ -1,14 +1,41 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-
+import { X, Mic, Loader2 } from "lucide-react";
+import { useVoiceInput } from "../hooks/useVoiceInput";
+import { parseVoiceText } from "../Api/voiceService";
+const languageLocales: Record<string, string> = {
+  en: "en-US",
+  fi: "fi-FI",
+};
 interface AddCardModalProps {
   onAdd: (word: string, context: string) => void;
   onClose: () => void;
+  currentLanguage?: string; //
 }
 
-export function AddCardModal({ onAdd, onClose }: AddCardModalProps) {
+export function AddCardModal({
+  onAdd,
+  onClose,
+  currentLanguage = "en",
+}: AddCardModalProps) {
   const [word, setWord] = useState("");
   const [context, setContext] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+
+  const handleTranscript = async (text: string) => {
+    setIsParsing(true);
+    try {
+      const result = await parseVoiceText(text, currentLanguage);
+      if (result.word) setWord(result.word);
+      if (result.context) setContext(result.context);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  const { isListening, transcript, error, startListening } =
+    useVoiceInput(handleTranscript);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,13 +50,47 @@ export function AddCardModal({ onAdd, onClose }: AddCardModalProps) {
       <div className="bg-white rounded-lg max-w-lg w-full p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-medium">Add card</h2>
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Кнопка микрофона */}
+            <button
+              type="button"
+              onClick={() =>
+                startListening(languageLocales[currentLanguage] ?? "en-US")
+              }
+              disabled={isListening || isParsing}
+              title="Add by voice"
+              className={`p-2 rounded-lg transition-colors ${
+                isListening
+                  ? "text-red-500 bg-red-50 animate-pulse"
+                  : "text-gray-400 hover:text-blue-500 hover:bg-blue-50"
+              } disabled:opacity-50`}
+            >
+              {isParsing ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Статус голоса */}
+        {isListening && (
+          <p className="text-sm text-red-500 mb-3 flex items-center gap-1">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse inline-block" />
+            Listening...
+          </p>
+        )}
+        {transcript && !isListening && (
+          <p className="text-xs text-gray-400 mb-3 italic">"{transcript}"</p>
+        )}
+        {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
