@@ -1,4 +1,5 @@
 import express from "express";
+import path from "path";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
@@ -18,6 +19,14 @@ app.use("/api/texts", textsRouter);
 app.use("/api/contexts", contextsRouter);
 app.use("/api/voice", voiceRouter);
 const PORT = process.env.PORT || 4000;
+
+if (process.env.NODE_ENV === "production") {
+  const distPath = path.resolve(__dirname, "../../frontend/build");
+  app.use(express.static(distPath));
+  app.use((_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
