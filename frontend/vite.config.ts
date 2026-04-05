@@ -27,18 +27,3 @@ export default defineConfig({
     outDir: "build",
   },
 });
-// export default defineConfig({
-//   plugins: [react(), tailwindcss()],
-//   resolve: {
-//     alias: {
-//       "@": path.resolve(__dirname, "./src"),
-//     },
-//   },
-//   server: {
-//     port: 3000,
-//     open: true,
-//   },
-//   build: {
-//     outDir: "build",
-//   },
-// });
