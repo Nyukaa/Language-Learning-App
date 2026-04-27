@@ -80,18 +80,6 @@ export function BottomNav({
             <TrendingUp className="w-5 h-5" />
             <span className="text-xs">Progress</span>
           </button>
-
-          {/* <button
-            onClick={() => onScreenChange('diary')}
-            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
-              currentScreen === 'diary'
-                ? 'text-blue-500'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <BookMarked className="w-5 h-5" />
-            <span className="text-xs">Дневник</span>
-          </button> */}
         </div>
       </div>
     </nav>
