@@ -14,7 +14,7 @@ describe("BottomNav", () => {
     render(<BottomNav {...defaultProps} />);
     expect(screen.getByText("Main")).toBeDefined();
     expect(screen.getByText("Dictionary")).toBeDefined();
-    expect(screen.getByText("Progress")).toBeDefined();
+    expect(screen.getByText("Progres")).toBeDefined();
   });
 
   it("calls onScreenChange when Dictionary is clicked", () => {
