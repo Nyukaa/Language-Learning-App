@@ -88,26 +88,26 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
-#   deploy:
-#     name: Deploy to Render
-#     needs: [build]
-#     runs-on: ubuntu-latest
-#     if: |
-#       github.event_name == 'push' &&
-#       !contains(join(github.event.commits.*.message, ' '), '#skip')
-#     steps:
-#       - name: Trigger Render deployment
-#         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+  deploy:
+    name: Deploy to Render
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      !contains(join(github.event.commits.*.message, ' '), '#skip')
+    steps:
+      - name: Trigger Render deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK_LANG_APP }}
 
-#   tag_release:
-#     name: Tag Release
-#     needs: [deploy]
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
+  tag_release:
+    name: Tag Release
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-#       - name: Bump version and push tag
-#         uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#           DEFAULT_BUMP: patch
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@4ed44965e0db8dab2b466a16da04aec3cc312fd8
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
