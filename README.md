@@ -180,7 +180,7 @@ If the AI extracts the wrong word or context, users can quickly edit the fields 
 
 - Full i18n support (UI translation)
 - Advanced spaced repetition algorithm
-- Accessibility improvements
+- Accessibility improvement
 - Mobile-first design optimization
 - Enhanced analytics and progress tracking
 - Optional text-to-speech pronunciation playback
