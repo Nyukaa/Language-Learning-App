@@ -52,4 +52,13 @@ export default [
       eqeqeq: "off",
     },
   },
+  {
+    files: ["azure-docker-demo/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ];
