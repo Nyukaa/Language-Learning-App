@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import react from "eslint-plugin-react";
 import tseslint from "typescript-eslint";
+import globals from "globals";
 
 export default [
   {
@@ -50,6 +51,15 @@ export default [
       "react/prop-types": "off",
       "@typescript-eslint/no-require-imports": "off",
       eqeqeq: "off",
+    },
+  },
+  {
+    files: ["azure-docker-demo/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        ...globals.node,
+      },
     },
   },
 ];
