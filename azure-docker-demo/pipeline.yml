@@ -22,7 +22,7 @@ stages:
             inputs:
               command: buildAndPush
               repository: azure-docker-demo
-              dockerfile: "$(Build.SourcesDirectory)/Dockerfile"
+              dockerfile: "$(Build.SourcesDirectory)/azure-docker-demo//Dockerfile"
               containerRegistry: "$(dockerRegistryServiceConnection)"
               tags: |
                 $(Build.BuildId)
